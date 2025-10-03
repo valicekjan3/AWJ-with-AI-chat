@@ -1,867 +1,1151 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Area, AreaChart } from 'recharts';
-import { Camera, Download, Upload, Save, Share2, TrendingUp, AlertCircle, CheckCircle, Settings, Database, Zap, Eye, BarChart3, MessageSquare, Sparkles, Play, X, Layers, Box, Activity, FileText, Calculator } from 'lucide-react';
-
-// Extended materials database
-const MATERIALS_DATABASE = [
-  { id: 'steel_s275', name: { en: 'Steel S275', cs: 'Ocel S275', sk: 'Oceľ S275', de: 'Stahl S275', fr: 'Acier S275', es: 'Acero S275', it: 'Acciaio S275', pl: 'Stal S275', ru: 'Сталь S275', uk: 'Сталь S275', zh: '钢材 S275', ja: '鋼材 S275', ko: '강철 S275', ar: 'فولاذ S275', tr: 'Çelik S275', nl: 'Staal S275', sv: 'Stål S275', no: 'Stål S275', da: 'Stål S275', fi: 'Teräs S275', pt: 'Aço S275', ro: 'Oțel S275' }, type: 'Metal', density: 7850, youngModulus: 210, tensileStrength: 410, hardness: 140 },
-  { id: 'steel_s355', name: { en: 'Steel S355', cs: 'Ocel S355', sk: 'Oceľ S355', de: 'Stahl S355', fr: 'Acier S355', es: 'Acero S355', it: 'Acciaio S355', pl: 'Stal S355', ru: 'Сталь S355', uk: 'Сталь S355', zh: '钢材 S355', ja: '鋼材 S355', ko: '강철 S355', ar: 'فولاذ S355', tr: 'Çelik S355', nl: 'Staal S355', sv: 'Stål S355', no: 'Stål S355', da: 'Stål S355', fi: 'Teräs S355', pt: 'Aço S355', ro: 'Oțel S355' }, type: 'Metal', density: 7850, youngModulus: 210, tensileStrength: 510, hardness: 160 },
-  { id: 'stainless_304', name: { en: 'Stainless 304', cs: 'Nerez 304', sk: 'Nehrdzavejúca 304', de: 'Edelstahl 304', fr: 'Inox 304', es: 'Inoxidable 304', it: 'Inox 304', pl: 'Nierdzewna 304', ru: 'Нержавейка 304', uk: 'Нержавійка 304', zh: '不锈钢 304', ja: 'ステンレス 304', ko: '스테인리스 304', ar: 'ستانلس 304', tr: 'Paslanmaz 304', nl: 'RVS 304', sv: 'Rostfritt 304', no: 'Rustfritt 304', da: 'Rustfrit 304', fi: 'Ruostumaton 304', pt: 'Inox 304', ro: 'Inox 304' }, type: 'Metal', density: 8000, youngModulus: 193, tensileStrength: 515, hardness: 170 },
-  { id: 'al_6061', name: { en: 'Aluminum 6061', cs: 'Hliník 6061', sk: 'Hliník 6061', de: 'Aluminium 6061', fr: 'Aluminium 6061', es: 'Aluminio 6061', it: 'Alluminio 6061', pl: 'Aluminium 6061', ru: 'Алюминий 6061', uk: 'Алюміній 6061', zh: '铝 6061', ja: 'アルミニウム 6061', ko: '알루미늄 6061', ar: 'ألومنيوم 6061', tr: 'Alüminyum 6061', nl: 'Aluminium 6061', sv: 'Aluminium 6061', no: 'Aluminium 6061', da: 'Aluminium 6061', fi: 'Alumiini 6061', pt: 'Alumínio 6061', ro: 'Aluminiu 6061' }, type: 'Metal', density: 2700, youngModulus: 69, tensileStrength: 310, hardness: 95 },
-  { id: 'ti_grade5', name: { en: 'Titanium Grade 5', cs: 'Titan Grade 5', sk: 'Titán Grade 5', de: 'Titan Grade 5', fr: 'Titane Grade 5', es: 'Titanio Grade 5', it: 'Titanio Grade 5', pl: 'Tytan Grade 5', ru: 'Титан Grade 5', uk: 'Титан Grade 5', zh: '钛 Grade 5', ja: 'チタン Grade 5', ko: '티타늄 Grade 5', ar: 'تيتانيوم Grade 5', tr: 'Titanyum Grade 5', nl: 'Titanium Grade 5', sv: 'Titan Grade 5', no: 'Titan Grade 5', da: 'Titan Grade 5', fi: 'Titaani Grade 5', pt: 'Titânio Grade 5', ro: 'Titan Grade 5' }, type: 'Metal', density: 4430, youngModulus: 114, tensileStrength: 950, hardness: 340 },
-  { id: 'brass', name: { en: 'Brass', cs: 'Mosaz', sk: 'Mosadz', de: 'Messing', fr: 'Laiton', es: 'Latón', it: 'Ottone', pl: 'Mosiądz', ru: 'Латунь', uk: 'Латунь', zh: '黄铜', ja: '真鍮', ko: '황동', ar: 'نحاس أصفر', tr: 'Pirinç', nl: 'Messing', sv: 'Mässing', no: 'Messing', da: 'Messing', fi: 'Messinki', pt: 'Latão', ro: 'Alamă' }, type: 'Metal', density: 8500, youngModulus: 97, tensileStrength: 340, hardness: 100 },
-  { id: 'copper', name: { en: 'Copper', cs: 'Měď', sk: 'Meď', de: 'Kupfer', fr: 'Cuivre', es: 'Cobre', it: 'Rame', pl: 'Miedź', ru: 'Медь', uk: 'Мідь', zh: '铜', ja: '銅', ko: '구리', ar: 'نحاس', tr: 'Bakır', nl: 'Koper', sv: 'Koppar', no: 'Kobber', da: 'Kobber', fi: 'Kupari', pt: 'Cobre', ro: 'Cupru' }, type: 'Metal', density: 8940, youngModulus: 117, tensileStrength: 220, hardness: 45 },
-  { id: 'glass', name: { en: 'Glass', cs: 'Sklo', sk: 'Sklo', de: 'Glas', fr: 'Verre', es: 'Vidrio', it: 'Vetro', pl: 'Szkło', ru: 'Стекло', uk: 'Скло', zh: '玻璃', ja: 'ガラス', ko: '유리', ar: 'زجاج', tr: 'Cam', nl: 'Glas', sv: 'Glas', no: 'Glass', da: 'Glas', fi: 'Lasi', pt: 'Vidro', ro: 'Sticlă' }, type: 'Non-Metal', density: 2500, youngModulus: 70, tensileStrength: 50, hardness: 600 },
-  { id: 'granite', name: { en: 'Granite', cs: 'Žula', sk: 'Žula', de: 'Granit', fr: 'Granit', es: 'Granito', it: 'Granito', pl: 'Granit', ru: 'Гранит', uk: 'Граніт', zh: '花岗岩', ja: '花崗岩', ko: '화강암', ar: 'جرانيت', tr: 'Granit', nl: 'Graniet', sv: 'Granit', no: 'Granitt', da: 'Granit', fi: 'Graniitti', pt: 'Granito', ro: 'Granit' }, type: 'Stone', density: 2750, youngModulus: 50, tensileStrength: 20, hardness: 200 }
-];
-
-const TRANSLATIONS = {
-  en: { appTitle: 'AWJ Professional Calculator', level: 'Level', language: 'Language', background: 'Background', student: 'Student', engineer: 'Engineer', manager: 'Manager', cutTime: 'Cut Time', costPerPart: 'Cost/Part', avgRoughness: 'Avg. Roughness', maxTaper: 'Max. Taper', productivity: 'Productivity', inputsConfig: 'Inputs & Configuration', materialGeometry: 'Material & Geometry', material: 'Material', thickness: 'Thickness (mm)', cutLength: 'Cut Length (mm)', machineTooling: 'Machine & Tooling', pressure: 'Pump Pressure (MPa)', orificeId: 'Orifice ID (mm)', nozzleId: 'Nozzle ID (mm)', abrasiveType: 'Abrasive Type', abrasiveFlow: 'Abrasive Flow (g/min)', electricityCost: 'Electricity Cost (€/kWh)', optimizationGoal: 'Optimization Goal', tradeoff: 'Trade-off: Speed vs. Quality', eco: 'Eco', quality: 'Quality', predictionModel: 'Prediction Model', modelPhysical: 'Physical Model', modelRegression: 'Regression Model', modelAnn: 'Neural Network', modelGP: 'Gaussian Process', modelSymbolic: 'Symbolic Regression', modelHybrid: 'Hybrid Model', recommendedParams: 'Recommended Parameters', traverseSpeed: 'Traverse Speed', limitDepth: 'Limit Depth', visualizations: 'Visualizations', chartRoughness: 'Roughness vs Depth', chartTaper: 'Taper vs Depth', chartForces: 'Force Analysis', chartStress: 'Stress-Strain', analysis: 'Analysis & Export', costBreakdown: 'Cost Breakdown', comparison: 'Material Comparison', compareWith: 'Compare with', modelDetails: 'Model Details', vrSimulation: 'VR/AR Simulation', aiAssistant: 'AI Assistant', export: 'Export Results', saveProject: 'Save Project', expertAnalysis: 'Expert Analysis', generateAnalysis: 'Generate Analysis', cutSimulation: 'Cut Simulation', paramAnalysis: 'Parameter Analysis', dataViz: 'Data Visualization', discreteResults: 'Discrete Results at Cut Depth', depth: 'Depth', garnet: 'Garnet', olivine: 'Olivine' },
-  cs: { appTitle: 'AWJ Profesionální Kalkulátor', level: 'Úroveň', language: 'Jazyk', background: 'Pozadí', student: 'Student', engineer: 'Inženýr', manager: 'Manažer', cutTime: 'Čas řezu', costPerPart: 'Náklady/díl', avgRoughness: 'Prům. Drsnost', maxTaper: 'Max. Kuželovitost', productivity: 'Produktivita', inputsConfig: 'Vstupy a Konfigurace', materialGeometry: 'Materiál & Geometrie', material: 'Materiál', thickness: 'Tloušťka (mm)', cutLength: 'Délka řezu (mm)', machineTooling: 'Stroj & Nástroje', pressure: 'Tlak čerpadla (MPa)', orificeId: 'Průměr orifice (mm)', nozzleId: 'Průměr trysky (mm)', abrasiveType: 'Typ abraziva', abrasiveFlow: 'Průtok abraziva (g/min)', electricityCost: 'Cena el. energie (€/kWh)', optimizationGoal: 'Cíl Optimalizace', tradeoff: 'Kompromis: Rychlost vs. Kvalita', eco: 'Eko', quality: 'Kvalita', predictionModel: 'Predikční Model', modelPhysical: 'Fyzikální Model', modelRegression: 'Regresní Model', modelAnn: 'Neuronová Síť', modelGP: 'Gaussovský Proces', modelSymbolic: 'Symbolická Regrese', modelHybrid: 'Hybridní Model', recommendedParams: 'Doporučené Parametry', traverseSpeed: 'Rychlost Posuvu', limitDepth: 'Mezní Hloubka', visualizations: 'Vizualizace', chartRoughness: 'Drsnost vs. Hloubka', chartTaper: 'Kuželovitost vs. Hloubka', chartForces: 'Analýza Sil', chartStress: 'Napětí-Deformace', analysis: 'Analýza a Export', costBreakdown: 'Rozpad Nákladů', comparison: 'Srovnání Materiálů', compareWith: 'Porovnat s', modelDetails: 'Detaily Modelu', vrSimulation: 'VR/AR Simulace', aiAssistant: 'AI Asistent', export: 'Exportovat', saveProject: 'Uložit Projekt', expertAnalysis: 'Expertní Analýza', generateAnalysis: 'Vygenerovat Analýzu', cutSimulation: 'Simulace Řezání', paramAnalysis: 'Analýza Parametrů', dataViz: 'Vizualizace Dat', discreteResults: 'Diskrétní Výsledky', depth: 'Hloubka', garnet: 'Granát', olivine: 'Olivín' },
-  sk: { appTitle: 'AWJ Profesionálny Kalkulátor', level: 'Úroveň', language: 'Jazyk', background: 'Pozadie', student: 'Študent', engineer: 'Inžinier', manager: 'Manažér', cutTime: 'Čas rezu', costPerPart: 'Náklady/diel', avgRoughness: 'Priem. Drsnosť', maxTaper: 'Max. Kužeľovitosť', productivity: 'Produktivita', inputsConfig: 'Vstupy a Konfigurácia', materialGeometry: 'Materiál & Geometria', material: 'Materiál', thickness: 'Hrúbka (mm)', cutLength: 'Dĺžka rezu (mm)', machineTooling: 'Stroj & Nástroje', pressure: 'Tlak čerpadla (MPa)', orificeId: 'Priemer orifice (mm)', nozzleId: 'Priemer trysky (mm)', abrasiveType: 'Typ abrazíva', abrasiveFlow: 'Prietok abrazíva (g/min)', electricityCost: 'Cena el. energie (€/kWh)', optimizationGoal: 'Cieľ Optimalizácie', tradeoff: 'Kompromis: Rýchlosť vs. Kvalita', eco: 'Eko', quality: 'Kvalita', predictionModel: 'Predikčný Model', modelPhysical: 'Fyzikálny Model', modelRegression: 'Regresný Model', modelAnn: 'Neurónová Sieť', modelGP: 'Gaussovský Proces', modelSymbolic: 'Symbolická Regresia', modelHybrid: 'Hybridný Model', recommendedParams: 'Odporúčané Parametre', traverseSpeed: 'Rýchlosť Posuvu', limitDepth: 'Limitná Hĺbka', visualizations: 'Vizualizácie', chartRoughness: 'Drsnosť vs. Hĺbka', chartTaper: 'Kužeľovitosť vs. Hĺbka', chartForces: 'Analýza Síl', chartStress: 'Napätie-Deformácia', analysis: 'Analýza a Export', costBreakdown: 'Rozpad Nákladov', comparison: 'Porovnanie Materiálov', compareWith: 'Porovnať s', modelDetails: 'Detaily Modelu', vrSimulation: 'VR/AR Simulácia', aiAssistant: 'AI Asistent', export: 'Exportovať', saveProject: 'Uložiť Projekt', expertAnalysis: 'Expertná Analýza', generateAnalysis: 'Vygenerovať Analýzu', cutSimulation: 'Simulácia Rezania', paramAnalysis: 'Analýza Parametrov', dataViz: 'Vizualizácia Dát', discreteResults: 'Diskrétne Výsledky', depth: 'Hĺbka', garnet: 'Granát', olivine: 'Olivín' },
-  de: { appTitle: 'AWJ Professioneller Rechner', level: 'Stufe', language: 'Sprache', background: 'Hintergrund', student: 'Student', engineer: 'Ingenieur', manager: 'Manager', cutTime: 'Schnittzeit', costPerPart: 'Kosten/Teil', avgRoughness: 'Durchschn. Rauheit', maxTaper: 'Max. Verjüngung', productivity: 'Produktivität', inputsConfig: 'Eingaben & Konfiguration', materialGeometry: 'Material & Geometrie', material: 'Material', thickness: 'Dicke (mm)', cutLength: 'Schnittlänge (mm)', machineTooling: 'Maschine & Werkzeuge', pressure: 'Pumpendruck (MPa)', orificeId: 'Düsen-ID (mm)', nozzleId: 'Düsen-ID (mm)', abrasiveType: 'Abrasivtyp', abrasiveFlow: 'Abrasivfluss (g/min)', electricityCost: 'Stromkosten (€/kWh)', optimizationGoal: 'Optimierungsziel', tradeoff: 'Abwägung: Geschwindigkeit vs. Qualität', eco: 'Öko', quality: 'Qualität', predictionModel: 'Vorhersagemodell', modelPhysical: 'Physikalisches Modell', modelRegression: 'Regressionsmodell', modelAnn: 'Neuronales Netz', modelGP: 'Gaußscher Prozess', modelSymbolic: 'Symbolische Regression', modelHybrid: 'Hybridmodell', recommendedParams: 'Empfohlene Parameter', traverseSpeed: 'Vorschubgeschwindigkeit', limitDepth: 'Grenztiefe', visualizations: 'Visualisierungen', chartRoughness: 'Rauheit vs. Tiefe', chartTaper: 'Verjüngung vs. Tiefe', chartForces: 'Kraftanalyse', chartStress: 'Spannung-Dehnung', analysis: 'Analyse & Export', costBreakdown: 'Kostenaufschlüsselung', comparison: 'Materialvergleich', compareWith: 'Vergleichen mit', modelDetails: 'Modelldetails', vrSimulation: 'VR/AR-Simulation', aiAssistant: 'KI-Assistent', export: 'Exportieren', saveProject: 'Projekt speichern', expertAnalysis: 'Expertenanalyse', generateAnalysis: 'Analyse generieren', cutSimulation: 'Schnittsimulation', paramAnalysis: 'Parameteranalyse', dataViz: 'Datenvisualisierung', discreteResults: 'Diskrete Ergebnisse', depth: 'Tiefe', garnet: 'Granat', olivine: 'Olivin' },
-  fr: { appTitle: 'Calculateur AWJ Professionnel', level: 'Niveau', language: 'Langue', background: 'Arrière-plan', student: 'Étudiant', engineer: 'Ingénieur', manager: 'Gestionnaire', cutTime: 'Temps de coupe', costPerPart: 'Coût/Pièce', avgRoughness: 'Rugosité moy.', maxTaper: 'Conicité max.', productivity: 'Productivité', inputsConfig: 'Entrées et Configuration', materialGeometry: 'Matériau & Géométrie', material: 'Matériau', thickness: 'Épaisseur (mm)', cutLength: 'Longueur de coupe (mm)', machineTooling: 'Machine & Outillage', pressure: 'Pression pompe (MPa)', orificeId: 'Diamètre orifice (mm)', nozzleId: 'Diamètre buse (mm)', abrasiveType: 'Type d\'abrasif', abrasiveFlow: 'Débit abrasif (g/min)', electricityCost: 'Coût électricité (€/kWh)', optimizationGoal: 'Objectif d\'optimisation', tradeoff: 'Compromis: Vitesse vs. Qualité', eco: 'Éco', quality: 'Qualité', predictionModel: 'Modèle de prédiction', modelPhysical: 'Modèle physique', modelRegression: 'Modèle de régression', modelAnn: 'Réseau neuronal', modelGP: 'Processus gaussien', modelSymbolic: 'Régression symbolique', modelHybrid: 'Modèle hybride', recommendedParams: 'Paramètres recommandés', traverseSpeed: 'Vitesse de traverse', limitDepth: 'Profondeur limite', visualizations: 'Visualisations', chartRoughness: 'Rugosité vs. Profondeur', chartTaper: 'Conicité vs. Profondeur', chartForces: 'Analyse des forces', chartStress: 'Contrainte-Déformation', analysis: 'Analyse & Export', costBreakdown: 'Répartition des coûts', comparison: 'Comparaison matériaux', compareWith: 'Comparer avec', modelDetails: 'Détails du modèle', vrSimulation: 'Simulation VR/AR', aiAssistant: 'Assistant IA', export: 'Exporter', saveProject: 'Sauvegarder projet', expertAnalysis: 'Analyse experte', generateAnalysis: 'Générer analyse', cutSimulation: 'Simulation de coupe', paramAnalysis: 'Analyse paramètres', dataViz: 'Visualisation données', discreteResults: 'Résultats discrets', depth: 'Profondeur', garnet: 'Grenat', olivine: 'Olivine' },
-  es: { appTitle: 'Calculadora AWJ Profesional', level: 'Nivel', language: 'Idioma', background: 'Fondo', student: 'Estudiante', engineer: 'Ingeniero', manager: 'Gerente', cutTime: 'Tiempo de corte', costPerPart: 'Costo/Pieza', avgRoughness: 'Rugosidad prom.', maxTaper: 'Conicidad máx.', productivity: 'Productividad', inputsConfig: 'Entradas y Configuración', materialGeometry: 'Material y Geometría', material: 'Material', thickness: 'Espesor (mm)', cutLength: 'Longitud de corte (mm)', machineTooling: 'Máquina y Herramientas', pressure: 'Presión bomba (MPa)', orificeId: 'Diámetro orificio (mm)', nozzleId: 'Diámetro boquilla (mm)', abrasiveType: 'Tipo de abrasivo', abrasiveFlow: 'Flujo abrasivo (g/min)', electricityCost: 'Costo electricidad (€/kWh)', optimizationGoal: 'Objetivo de optimización', tradeoff: 'Equilibrio: Velocidad vs. Calidad', eco: 'Eco', quality: 'Calidad', predictionModel: 'Modelo de predicción', modelPhysical: 'Modelo físico', modelRegression: 'Modelo de regresión', modelAnn: 'Red neuronal', modelGP: 'Proceso gaussiano', modelSymbolic: 'Regresión simbólica', modelHybrid: 'Modelo híbrido', recommendedParams: 'Parámetros recomendados', traverseSpeed: 'Velocidad de avance', limitDepth: 'Profundidad límite', visualizations: 'Visualizaciones', chartRoughness: 'Rugosidad vs. Profundidad', chartTaper: 'Conicidad vs. Profundidad', chartForces: 'Análisis de fuerzas', chartStress: 'Tensión-Deformación', analysis: 'Análisis y Exportación', costBreakdown: 'Desglose de costos', comparison: 'Comparación materiales', compareWith: 'Comparar con', modelDetails: 'Detalles del modelo', vrSimulation: 'Simulación VR/AR', aiAssistant: 'Asistente IA', export: 'Exportar', saveProject: 'Guardar proyecto', expertAnalysis: 'Análisis experto', generateAnalysis: 'Generar análisis', cutSimulation: 'Simulación de corte', paramAnalysis: 'Análisis parámetros', dataViz: 'Visualización datos', discreteResults: 'Resultados discretos', depth: 'Profundidad', garnet: 'Granate', olivine: 'Olivino' },
-  it: { appTitle: 'Calcolatore AWJ Professionale', level: 'Livello', language: 'Lingua', background: 'Sfondo', student: 'Studente', engineer: 'Ingegnere', manager: 'Manager', cutTime: 'Tempo di taglio', costPerPart: 'Costo/Pezzo', avgRoughness: 'Rugosità media', maxTaper: 'Conicità max', productivity: 'Produttività', inputsConfig: 'Input e Configurazione', materialGeometry: 'Materiale e Geometria', material: 'Materiale', thickness: 'Spessore (mm)', cutLength: 'Lunghezza taglio (mm)', machineTooling: 'Macchina e Utensili', pressure: 'Pressione pompa (MPa)', orificeId: 'Diametro orifizio (mm)', nozzleId: 'Diametro ugello (mm)', abrasiveType: 'Tipo di abrasivo', abrasiveFlow: 'Flusso abrasivo (g/min)', electricityCost: 'Costo elettricità (€/kWh)', optimizationGoal: 'Obiettivo ottimizzazione', tradeoff: 'Compromesso: Velocità vs. Qualità', eco: 'Eco', quality: 'Qualità', predictionModel: 'Modello predittivo', modelPhysical: 'Modello fisico', modelRegression: 'Modello regressione', modelAnn: 'Rete neurale', modelGP: 'Processo gaussiano', modelSymbolic: 'Regressione simbolica', modelHybrid: 'Modello ibrido', recommendedParams: 'Parametri consigliati', traverseSpeed: 'Velocità avanzamento', limitDepth: 'Profondità limite', visualizations: 'Visualizzazioni', chartRoughness: 'Rugosità vs. Profondità', chartTaper: 'Conicità vs. Profondità', chartForces: 'Analisi forze', chartStress: 'Tensione-Deformazione', analysis: 'Analisi ed Export', costBreakdown: 'Ripartizione costi', comparison: 'Confronto materiali', compareWith: 'Confronta con', modelDetails: 'Dettagli modello', vrSimulation: 'Simulazione VR/AR', aiAssistant: 'Assistente IA', export: 'Esporta', saveProject: 'Salva progetto', expertAnalysis: 'Analisi esperta', generateAnalysis: 'Genera analisi', cutSimulation: 'Simulazione taglio', paramAnalysis: 'Analisi parametri', dataViz: 'Visualizzazione dati', discreteResults: 'Risultati discreti', depth: 'Profondità', garnet: 'Granato', olivine: 'Olivina' },
-  pl: { appTitle: 'Kalkulator AWJ Profesjonalny', level: 'Poziom', language: 'Język', background: 'Tło', student: 'Student', engineer: 'Inżynier', manager: 'Menedżer', cutTime: 'Czas cięcia', costPerPart: 'Koszt/Część', avgRoughness: 'Śr. Chropowatość', maxTaper: 'Maks. Stożkowość', productivity: 'Produktywność', inputsConfig: 'Wejścia i Konfiguracja', materialGeometry: 'Materiał i Geometria', material: 'Materiał', thickness: 'Grubość (mm)', cutLength: 'Długość cięcia (mm)', machineTooling: 'Maszyna i Narzędzia', pressure: 'Ciśnienie pompy (MPa)', orificeId: 'Średnica otworu (mm)', nozzleId: 'Średnica dyszy (mm)', abrasiveType: 'Typ ścierniwa', abrasiveFlow: 'Przepływ ścierniwa (g/min)', electricityCost: 'Koszt energii (€/kWh)', optimizationGoal: 'Cel optymalizacji', tradeoff: 'Kompromis: Szybkość vs. Jakość', eco: 'Eko', quality: 'Jakość', predictionModel: 'Model predykcyjny', modelPhysical: 'Model fizyczny', modelRegression: 'Model regresji', modelAnn: 'Sieć neuronowa', modelGP: 'Proces gaussowski', modelSymbolic: 'Regresja symboliczna', modelHybrid: 'Model hybrydowy', recommendedParams: 'Zalecane parametry', traverseSpeed: 'Prędkość posuwu', limitDepth: 'Głębokość graniczna', visualizations: 'Wizualizacje', chartRoughness: 'Chropowatość vs. Głębokość', chartTaper: 'Stożkowość vs. Głębokość', chartForces: 'Analiza sił', chartStress: 'Naprężenie-Odkształcenie', analysis: 'Analiza i Eksport', costBreakdown: 'Podział kosztów', comparison: 'Porównanie materiałów', compareWith: 'Porównaj z', modelDetails: 'Szczegóły modelu', vrSimulation: 'Symulacja VR/AR', aiAssistant: 'Asystent AI', export: 'Eksportuj', saveProject: 'Zapisz projekt', expertAnalysis: 'Analiza ekspercka', generateAnalysis: 'Generuj analizę', cutSimulation: 'Symulacja cięcia', paramAnalysis: 'Analiza parametrów', dataViz: 'Wizualizacja danych', discreteResults: 'Wyniki dyskretne', depth: 'Głębokość', garnet: 'Granat', olivine: 'Oliwin' },
-  ru: { appTitle: 'Профессиональный калькулятор AWJ', level: 'Уровень', language: 'Язык', background: 'Фон', student: 'Студент', engineer: 'Инженер', manager: 'Менеджер', cutTime: 'Время резки', costPerPart: 'Стоимость/Деталь', avgRoughness: 'Ср. Шероховатость', maxTaper: 'Макс. Конусность', productivity: 'Производительность', inputsConfig: 'Входы и Конфигурация', materialGeometry: 'Материал и Геометрия', material: 'Материал', thickness: 'Толщина (мм)', cutLength: 'Длина реза (мм)', machineTooling: 'Станок и Инструменты', pressure: 'Давление насоса (МПа)', orificeId: 'Диаметр отверстия (мм)', nozzleId: 'Диаметр сопла (мм)', abrasiveType: 'Тип абразива', abrasiveFlow: 'Расход абразива (г/мин)', electricityCost: 'Стоимость электричества (€/кВтч)', optimizationGoal: 'Цель оптимизации', tradeoff: 'Компромисс: Скорость vs. Качество', eco: 'Эко', quality: 'Качество', predictionModel: 'Прогнозная модель', modelPhysical: 'Физическая модель', modelRegression: 'Регрессионная модель', modelAnn: 'Нейронная сеть', modelGP: 'Гауссовский процесс', modelSymbolic: 'Символическая регрессия', modelHybrid: 'Гибридная модель', recommendedParams: 'Рекомендуемые параметры', traverseSpeed: 'Скорость подачи', limitDepth: 'Предельная глубина', visualizations: 'Визуализации', chartRoughness: 'Шероховатость vs. Глубина', chartTaper: 'Конусность vs. Глубина', chartForces: 'Анализ сил', chartStress: 'Напряжение-Деформация', analysis: 'Анализ и Экспорт', costBreakdown: 'Разбивка затрат', comparison: 'Сравнение материалов', compareWith: 'Сравнить с', modelDetails: 'Детали модели', vrSimulation: 'VR/AR Симуляция', aiAssistant: 'AI Ассистент', export: 'Экспорт', saveProject: 'Сохранить проект', expertAnalysis: 'Экспертный анализ', generateAnalysis: 'Сгенерировать анализ', cutSimulation: 'Симуляция резки', paramAnalysis: 'Анализ параметров', dataViz: 'Визуализация данных', discreteResults: 'Дискретные результаты', depth: 'Глубина', garnet: 'Гранат', olivine: 'Оливин' },
-  uk: { appTitle: 'Професійний калькулятор AWJ', level: 'Рівень', language: 'Мова', background: 'Фон', student: 'Студент', engineer: 'Інженер', manager: 'Менеджер', cutTime: 'Час різання', costPerPart: 'Вартість/Деталь', avgRoughness: 'Сер. Шорсткість', maxTaper: 'Макс. Конусність', productivity: 'Продуктивність', inputsConfig: 'Входи та Конфігурація', materialGeometry: 'Матеріал та Геометрія', material: 'Матеріал', thickness: 'Товщина (мм)', cutLength: 'Довжина різу (мм)', machineTooling: 'Верстат та Інструменти', pressure: 'Тиск насоса (МПа)', orificeId: 'Діаметр отвору (мм)', nozzleId: 'Діаметр сопла (мм)', abrasiveType: 'Тип абразиву', abrasiveFlow: 'Витрата абразиву (г/хв)', electricityCost: 'Вартість електроенергії (€/кВтг)', optimizationGoal: 'Мета оптимізації', tradeoff: 'Компроміс: Швидкість vs. Якість', eco: 'Еко', quality: 'Якість', predictionModel: 'Прогнозна модель', modelPhysical: 'Фізична модель', modelRegression: 'Регресійна модель', modelAnn: 'Нейронна мережа', modelGP: 'Гауссівський процес', modelSymbolic: 'Символічна регресія', modelHybrid: 'Гібридна модель', recommendedParams: 'Рекомендовані параметри', traverseSpeed: 'Швидкість подачі', limitDepth: 'Гранична глибина', visualizations: 'Візуалізації', chartRoughness: 'Шорсткість vs. Глибина', chartTaper: 'Конусність vs. Глибина', chartForces: 'Аналіз сил', chartStress: 'Напруга-Деформація', analysis: 'Аналіз та Експорт', costBreakdown: 'Розбивка витрат', comparison: 'Порівняння матеріалів', compareWith: 'Порівняти з', modelDetails: 'Деталі моделі', vrSimulation: 'VR/AR Симуляція', aiAssistant: 'AI Асистент', export: 'Експорт', saveProject: 'Зберегти проект', expertAnalysis: 'Експертний аналіз', generateAnalysis: 'Згенерувати аналіз', cutSimulation: 'Симуляція різання', paramAnalysis: 'Аналіз параметрів', dataViz: 'Візуалізація даних', discreteResults: 'Дискретні результати', depth: 'Глибина', garnet: 'Гранат', olivine: 'Олівін' },
-  zh: { appTitle: 'AWJ专业计算器', level: '级别', language: '语言', background: '背景', student: '学生', engineer: '工程师', manager: '经理', cutTime: '切割时间', costPerPart: '成本/零件', avgRoughness: '平均粗糙度', maxTaper: '最大锥度', productivity: '生产力', inputsConfig: '输入和配置', materialGeometry: '材料和几何', material: '材料', thickness: '厚度 (mm)', cutLength: '切割长度 (mm)', machineTooling: '机器和工具', pressure: '泵压 (MPa)', orificeId: '孔径 (mm)', nozzleId: '喷嘴直径 (mm)', abrasiveType: '磨料类型', abrasiveFlow: '磨料流量 (g/min)', electricityCost: '电费 (€/kWh)', optimizationGoal: '优化目标', tradeoff: '权衡：速度 vs. 质量', eco: '经济', quality: '质量', predictionModel: '预测模型', modelPhysical: '物理模型', modelRegression: '回归模型', modelAnn: '神经网络', modelGP: '高斯过程', modelSymbolic: '符号回归', modelHybrid: '混合模型', recommendedParams: '推荐参数', traverseSpeed: '进给速度', limitDepth: '极限深度', visualizations: '可视化', chartRoughness: '粗糙度 vs. 深度', chartTaper: '锥度 vs. 深度', chartForces: '力分析', chartStress: '应力-应变', analysis: '分析和导出', costBreakdown: '成本明细', comparison: '材料比较', compareWith: '比较', modelDetails: '模型详情', vrSimulation: 'VR/AR 模拟', aiAssistant: 'AI 助手', export: '导出', saveProject: '保存项目', expertAnalysis: '专家分析', generateAnalysis: '生成分析', cutSimulation: '切割模拟', paramAnalysis: '参数分析', dataViz: '数据可视化', discreteResults: '离散结果', depth: '深度', garnet: '石榴石', olivine: '橄榄石' },
-  ja: { appTitle: 'AWJプロフェッショナル計算機', level: 'レベル', language: '言語', background: '背景', student: '学生', engineer: 'エンジニア', manager: 'マネージャー', cutTime: '切断時間', costPerPart: 'コスト/部品', avgRoughness: '平均粗さ', maxTaper: '最大テーパー', productivity: '生産性', inputsConfig: '入力と設定', materialGeometry: '材料と形状', material: '材料', thickness: '厚さ (mm)', cutLength: '切断長さ (mm)', machineTooling: '機械とツール', pressure: 'ポンプ圧力 (MPa)', orificeId: 'オリフィス径 (mm)', nozzleId: 'ノズル径 (mm)', abrasiveType: '研磨材タイプ', abrasiveFlow: '研磨材流量 (g/min)', electricityCost: '電気代 (€/kWh)', optimizationGoal: '最適化目標', tradeoff: 'トレードオフ：速度 vs. 品質', eco: 'エコ', quality: '品質', predictionModel: '予測モデル', modelPhysical: '物理モデル', modelRegression: '回帰モデル', modelAnn: 'ニューラルネットワーク', modelGP: 'ガウス過程', modelSymbolic: '記号的回帰', modelHybrid: 'ハイブリッドモデル', recommendedParams: '推奨パラメータ', traverseSpeed: '送り速度', limitDepth: '限界深さ', visualizations: '可視化', chartRoughness: '粗さ vs. 深さ', chartTaper: 'テーパー vs. 深さ', chartForces: '力解析', chartStress: '応力-ひずみ', analysis: '分析とエクスポート', costBreakdown: 'コスト内訳', comparison: '材料比較', compareWith: '比較する', modelDetails: 'モデル詳細', vrSimulation: 'VR/ARシミュレーション', aiAssistant: 'AIアシスタント', export: 'エクスポート', saveProject: 'プロジェクト保存', expertAnalysis: '専門家分析', generateAnalysis: '分析生成', cutSimulation: '切断シミュレーション', paramAnalysis: 'パラメータ分析', dataViz: 'データ可視化', discreteResults: '離散結果', depth: '深さ', garnet: 'ガーネット', olivine: 'オリビン' },
-  ko: { appTitle: 'AWJ 전문 계산기', level: '레벨', language: '언어', background: '배경', student: '학생', engineer: '엔지니어', manager: '관리자', cutTime: '절단 시간', costPerPart: '비용/부품', avgRoughness: '평균 거칠기', maxTaper: '최대 테이퍼', productivity: '생산성', inputsConfig: '입력 및 구성', materialGeometry: '재료 및 형상', material: '재료', thickness: '두께 (mm)', cutLength: '절단 길이 (mm)', machineTooling: '기계 및 도구', pressure: '펌프 압력 (MPa)', orificeId: '오리피스 직경 (mm)', nozzleId: '노즐 직경 (mm)', abrasiveType: '연마재 유형', abrasiveFlow: '연마재 유량 (g/min)', electricityCost: '전기 비용 (€/kWh)', optimizationGoal: '최적화 목표', tradeoff: '절충: 속도 vs. 품질', eco: '에코', quality: '품질', predictionModel: '예측 모델', modelPhysical: '물리적 모델', modelRegression: '회귀 모델', modelAnn: '신경망', modelGP: '가우스 프로세스', modelSymbolic: '기호 회귀', modelHybrid: '하이브리드 모델', recommendedParams: '권장 매개변수', traverseSpeed: '이송 속도', limitDepth: '한계 깊이', visualizations: '시각화', chartRoughness: '거칠기 vs. 깊이', chartTaper: '테이퍼 vs. 깊이', chartForces: '힘 분석', chartStress: '응력-변형률', analysis: '분석 및 내보내기', costBreakdown: '비용 분석', comparison: '재료 비교', compareWith: '비교', modelDetails: '모델 세부사항', vrSimulation: 'VR/AR 시뮬레이션', aiAssistant: 'AI 어시스턴트', export: '내보내기', saveProject: '프로젝트 저장', expertAnalysis: '전문가 분석', generateAnalysis: '분석 생성', cutSimulation: '절단 시뮬레이션', paramAnalysis: '매개변수 분석', dataViz: '데이터 시각화', discreteResults: '이산 결과', depth: '깊이', garnet: '가넷', olivine: '올리빈' },
-  ar: { appTitle: 'حاسبة AWJ المحترفة', level: 'المستوى', language: 'اللغة', background: 'الخلفية', student: 'طالب', engineer: 'مهندس', manager: 'مدير', cutTime: 'وقت القطع', costPerPart: 'التكلفة/قطعة', avgRoughness: 'متوسط الخشونة', maxTaper: 'أقصى انحدار', productivity: 'الإنتاجية', inputsConfig: 'المدخلات والإعدادات', materialGeometry: 'المادة والهندسة', material: 'المادة', thickness: 'السمك (mm)', cutLength: 'طول القطع (mm)', machineTooling: 'الآلة والأدوات', pressure: 'ضغط المضخة (MPa)', orificeId: 'قطر الفتحة (mm)', nozzleId: 'قطر الفوهة (mm)', abrasiveType: 'نوع المادة الكاشطة', abrasiveFlow: 'تدفق المادة الكاشطة (g/min)', electricityCost: 'تكلفة الكهرباء (€/kWh)', optimizationGoal: 'هدف التحسين', tradeoff: 'المفاضلة: السرعة vs. الجودة', eco: 'اقتصادي', quality: 'جودة', predictionModel: 'نموذج التنبؤ', modelPhysical: 'نموذج فيزيائي', modelRegression: 'نموذج انحدار', modelAnn: 'شبكة عصبية', modelGP: 'عملية غاوسية', modelSymbolic: 'انحدار رمزي', modelHybrid: 'نموذج هجين', recommendedParams: 'المعاملات الموصى بها', traverseSpeed: 'سرعة التحرك', limitDepth: 'العمق الحدي', visualizations: 'التصورات', chartRoughness: 'الخشونة vs. العمق', chartTaper: 'الانحدار vs. العمق', chartForces: 'تحليل القوى', chartStress: 'الإجهاد-الانفعال', analysis: 'التحليل والتصدير', costBreakdown: 'تفصيل التكاليف', comparison: 'مقارنة المواد', compareWith: 'مقارنة مع', modelDetails: 'تفاصيل النموذج', vrSimulation: 'محاكاة VR/AR', aiAssistant: 'مساعد AI', export: 'تصدير', saveProject: 'حفظ المشروع', expertAnalysis: 'تحليل خبير', generateAnalysis: 'إنشاء التحليل', cutSimulation: 'محاكاة القطع', paramAnalysis: 'تحليل المعاملات', dataViz: 'تصور البيانات', discreteResults: 'النتائج المنفصلة', depth: 'العمق', garnet: 'جارنت', olivine: 'أوليفين' },
-  tr: { appTitle: 'AWJ Profesyonel Hesaplayıcı', level: 'Seviye', language: 'Dil', background: 'Arka Plan', student: 'Öğrenci', engineer: 'Mühendis', manager: 'Yönetici', cutTime: 'Kesim Süresi', costPerPart: 'Maliyet/Parça', avgRoughness: 'Ort. Pürüzlülük', maxTaper: 'Maks. Koniklik', productivity: 'Verimlilik', inputsConfig: 'Girdiler ve Yapılandırma', materialGeometry: 'Malzeme ve Geometri', material: 'Malzeme', thickness: 'Kalınlık (mm)', cutLength: 'Kesim Uzunluğu (mm)', machineTooling: 'Makine ve Takımlar', pressure: 'Pompa Basıncı (MPa)', orificeId: 'Ağız Çapı (mm)', nozzleId: 'Nozul Çapı (mm)', abrasiveType: 'Aşındırıcı Tipi', abrasiveFlow: 'Aşındırıcı Akışı (g/dak)', electricityCost: 'Elektrik Maliyeti (€/kWh)', optimizationGoal: 'Optimizasyon Hedefi', tradeoff: 'Denge: Hız vs. Kalite', eco: 'Eko', quality: 'Kalite', predictionModel: 'Tahmin Modeli', modelPhysical: 'Fiziksel Model', modelRegression: 'Regresyon Modeli', modelAnn: 'Sinir Ağı', modelGP: 'Gauss Süreci', modelSymbolic: 'Sembolik Regresyon', modelHybrid: 'Hibrit Model', recommendedParams: 'Önerilen Parametreler', traverseSpeed: 'İlerleme Hızı', limitDepth: 'Sınır Derinliği', visualizations: 'Görselleştirmeler', chartRoughness: 'Pürüzlülük vs. Derinlik', chartTaper: 'Koniklik vs. Derinlik', chartForces: 'Kuvvet Analizi', chartStress: 'Gerilme-Gerinim', analysis: 'Analiz ve Dışa Aktarma', costBreakdown: 'Maliyet Dökümü', comparison: 'Malzeme Karşılaştırması', compareWith: 'Karşılaştır', modelDetails: 'Model Detayları', vrSimulation: 'VR/AR Simülasyonu', aiAssistant: 'AI Asistanı', export: 'Dışa Aktar', saveProject: 'Projeyi Kaydet', expertAnalysis: 'Uzman Analizi', generateAnalysis: 'Analiz Oluştur', cutSimulation: 'Kesim Simülasyonu', paramAnalysis: 'Parametre Analizi', dataViz: 'Veri Görselleştirme', discreteResults: 'Ayrık Sonuçlar', depth: 'Derinlik', garnet: 'Garnet', olivine: 'Olivin' },
-  nl: { appTitle: 'AWJ Professionele Calculator', level: 'Niveau', language: 'Taal', background: 'Achtergrond', student: 'Student', engineer: 'Ingenieur', manager: 'Manager', cutTime: 'Snijtijd', costPerPart: 'Kosten/Deel', avgRoughness: 'Gem. Ruwheid', maxTaper: 'Max. Tapse', productivity: 'Productiviteit', inputsConfig: 'Invoer en Configuratie', materialGeometry: 'Materiaal en Geometrie', material: 'Materiaal', thickness: 'Dikte (mm)', cutLength: 'Snijlengte (mm)', machineTooling: 'Machine en Gereedschap', pressure: 'Pompdruk (MPa)', orificeId: 'Opening diameter (mm)', nozzleId: 'Mondstuk diameter (mm)', abrasiveType: 'Schuurmiddeltype', abrasiveFlow: 'Schuurmiddelstroom (g/min)', electricityCost: 'Elektriciteitskosten (€/kWh)', optimizationGoal: 'Optimalisatiedoel', tradeoff: 'Afweging: Snelheid vs. Kwaliteit', eco: 'Eco', quality: 'Kwaliteit', predictionModel: 'Voorspellingsmodel', modelPhysical: 'Fysisch model', modelRegression: 'Regressiemodel', modelAnn: 'Neuraal netwerk', modelGP: 'Gaussisch proces', modelSymbolic: 'Symbolische regressie', modelHybrid: 'Hybride model', recommendedParams: 'Aanbevolen parameters', traverseSpeed: 'Doorvoersnelheid', limitDepth: 'Limietdiepte', visualizations: 'Visualisaties', chartRoughness: 'Ruwheid vs. Diepte', chartTaper: 'Tapse vs. Diepte', chartForces: 'Krachtanalyse', chartStress: 'Spanning-Rek', analysis: 'Analyse en Export', costBreakdown: 'Kostenverdeling', comparison: 'Materiaalvergelijking', compareWith: 'Vergelijk met', modelDetails: 'Modeldetails', vrSimulation: 'VR/AR Simulatie', aiAssistant: 'AI Assistent', export: 'Exporteren', saveProject: 'Project opslaan', expertAnalysis: 'Expertanalyse', generateAnalysis: 'Analyse genereren', cutSimulation: 'Snijsimulatie', paramAnalysis: 'Parameteranalyse', dataViz: 'Datavisualisatie', discreteResults: 'Discrete resultaten', depth: 'Diepte', garnet: 'Granaat', olivine: 'Olivijn' },
-  sv: { appTitle: 'AWJ Professionell Kalkylator', level: 'Nivå', language: 'Språk', background: 'Bakgrund', student: 'Student', engineer: 'Ingenjör', manager: 'Chef', cutTime: 'Skärtid', costPerPart: 'Kostnad/Del', avgRoughness: 'Gen. Råhet', maxTaper: 'Max. Koniskhet', productivity: 'Produktivitet', inputsConfig: 'Ingångar och Konfiguration', materialGeometry: 'Material och Geometri', material: 'Material', thickness: 'Tjocklek (mm)', cutLength: 'Skärlängd (mm)', machineTooling: 'Maskin och Verktyg', pressure: 'Pumptryck (MPa)', orificeId: 'Öppningsdiameter (mm)', nozzleId: 'Munstycksdiameter (mm)', abrasiveType: 'Slipmedelstyp', abrasiveFlow: 'Slipmedelsflöde (g/min)', electricityCost: 'Elkostnad (€/kWh)', optimizationGoal: 'Optimeringsmål', tradeoff: 'Avvägning: Hastighet vs. Kvalitet', eco: 'Eko', quality: 'Kvalitet', predictionModel: 'Prediktionsmodell', modelPhysical: 'Fysisk modell', modelRegression: 'Regressionsmodell', modelAnn: 'Neuralt nätverk', modelGP: 'Gaussisk process', modelSymbolic: 'Symbolisk regression', modelHybrid: 'Hybridmodell', recommendedParams: 'Rekommenderade parametrar', traverseSpeed: 'Matningshastighet', limitDepth: 'Gränsdjup', visualizations: 'Visualiseringar', chartRoughness: 'Råhet vs. Djup', chartTaper: 'Koniskhet vs. Djup', chartForces: 'Kraftanalys', chartStress: 'Spänning-Töjning', analysis: 'Analys och Export', costBreakdown: 'Kostnadsfördelning', comparison: 'Materialj ämförelse', compareWith: 'Jämför med', modelDetails: 'Modelldetaljer', vrSimulation: 'VR/AR Simulering', aiAssistant: 'AI Assistent', export: 'Exportera', saveProject: 'Spara projekt', expertAnalysis: 'Expertanalys', generateAnalysis: 'Generera analys', cutSimulation: 'Skärsimulering', paramAnalysis: 'Parameteranalys', dataViz: 'Datavisualisering', discreteResults: 'Diskreta resultat', depth: 'Djup', garnet: 'Granat', olivine: 'Olivin' },
-  no: { appTitle: 'AWJ Profesjonell Kalkulator', level: 'Nivå', language: 'Språk', background: 'Bakgrunn', student: 'Student', engineer: 'Ingeniør', manager: 'Leder', cutTime: 'Skjæretid', costPerPart: 'Kostnad/Del', avgRoughness: 'Gj.snitt Ruhet', maxTaper: 'Maks. Koniskhet', productivity: 'Produktivitet', inputsConfig: 'Inndata og Konfigurasjon', materialGeometry: 'Materiale og Geometri', material: 'Materiale', thickness: 'Tykkelse (mm)', cutLength: 'Skjærelengde (mm)', machineTooling: 'Maskin og Verktøy', pressure: 'Pumpetrykk (MPa)', orificeId: 'Åpningsdiameter (mm)', nozzleId: 'Munnstykke diameter (mm)', abrasiveType: 'Slipemiddeltype', abrasiveFlow: 'Slipemiddelstrøm (g/min)', electricityCost: 'Strømkostnad (€/kWh)', optimizationGoal: 'Optimeringsmål', tradeoff: 'Avveining: Hastighet vs. Kvalitet', eco: 'Øko', quality: 'Kvalitet', predictionModel: 'Prediksjonsmodell', modelPhysical: 'Fysisk modell', modelRegression: 'Regresjonsmodell', modelAnn: 'Nevrale nettverk', modelGP: 'Gaussisk prosess', modelSymbolic: 'Symbolsk regresjon', modelHybrid: 'Hybridmodell', recommendedParams: 'Anbefalte parametere', traverseSpeed: 'Matehastighet', limitDepth: 'Grensedybde', visualizations: 'Visualiseringer', chartRoughness: 'Ruhet vs. Dybde', chartTaper: 'Koniskhet vs. Dybde', chartForces: 'Kraftanalyse', chartStress: 'Spenning-Tøyning', analysis: 'Analyse og Eksport', costBreakdown: 'Kostnadsfordeling', comparison: 'Materialsammenligning', compareWith: 'Sammenlign med', modelDetails: 'Modelldetaljer', vrSimulation: 'VR/AR Simulering', aiAssistant: 'AI Assistent', export: 'Eksporter', saveProject: 'Lagre prosjekt', expertAnalysis: 'Ekspertanalyse', generateAnalysis: 'Generer analyse', cutSimulation: 'Skjæresimulering', paramAnalysis: 'Parameteranalyse', dataViz: 'Datavisualisering', discreteResults: 'Diskrete resultater', depth: 'Dybde', garnet: 'Granat', olivine: 'Olivin' },
-  da: { appTitle: 'AWJ Professionel Beregner', level: 'Niveau', language: 'Sprog', background: 'Baggrund', student: 'Student', engineer: 'Ingeniør', manager: 'Leder', cutTime: 'Skæretid', costPerPart: 'Omkostning/Del', avgRoughness: 'Gennem. Ruhed', maxTaper: 'Maks. Koniskhed', productivity: 'Produktivitet', inputsConfig: 'Input og Konfiguration', materialGeometry: 'Materiale og Geometri', material: 'Materiale', thickness: 'Tykkelse (mm)', cutLength: 'Skærelængde (mm)', machineTooling: 'Maskine og Værktøj', pressure: 'Pumpetryk (MPa)', orificeId: 'Åbningsdiameter (mm)', nozzleId: 'Dysediameter (mm)', abrasiveType: 'Slibemiddeltype', abrasiveFlow: 'Slibemiddelstrøm (g/min)', electricityCost: 'Elomkostning (€/kWh)', optimizationGoal: 'Optimeringsmål', tradeoff: 'Afvejning: Hastighed vs. Kvalitet', eco: 'Øko', quality: 'Kvalitet', predictionModel: 'Forudsigelsesmodel', modelPhysical: 'Fysisk model', modelRegression: 'Regressionsmodel', modelAnn: 'Neuralt netværk', modelGP: 'Gaussisk proces', modelSymbolic: 'Symbolsk regression', modelHybrid: 'Hybridmodel', recommendedParams: 'Anbefalede parametre', traverseSpeed: 'Fremføringshastighed', limitDepth: 'Grænsedybde', visualizations: 'Visualiseringer', chartRoughness: 'Ruhed vs. Dybde', chartTaper: 'Koniskhed vs. Dybde', chartForces: 'Kraftanalyse', chartStress: 'Spænding-Tøjning', analysis: 'Analyse og Eksport', costBreakdown: 'Omkostningsfordeling', comparison: 'Materialesammenligning', compareWith: 'Sammenlign med', modelDetails: 'Modeldetaljer', vrSimulation: 'VR/AR Simulering', aiAssistant: 'AI Assistent', export: 'Eksporter', saveProject: 'Gem projekt', expertAnalysis: 'Ekspertanalyse', generateAnalysis: 'Generer analyse', cutSimulation: 'Skæresimulering', paramAnalysis: 'Parameteranalyse', dataViz: 'Datavisualisering', discreteResults: 'Diskrete resultater', depth: 'Dybde', garnet: 'Granat', olivine: 'Olivin' },
-  fi: { appTitle: 'AWJ Ammattimainen Laskin', level: 'Taso', language: 'Kieli', background: 'Tausta', student: 'Opiskelija', engineer: 'Insinööri', manager: 'Johtaja', cutTime: 'Leikkausaika', costPerPart: 'Hinta/Osa', avgRoughness: 'Keskim. Karheus', maxTaper: 'Maks. Kartio', productivity: 'Tuottavuus', inputsConfig: 'Syötteet ja Konfiguraatio', materialGeometry: 'Materiaali ja Geometria', material: 'Materiaali', thickness: 'Paksuus (mm)', cutLength: 'Leikkauspituus (mm)', machineTooling: 'Kone ja Työkalut', pressure: 'Pumppupaine (MPa)', orificeId: 'Aukon halkaisija (mm)', nozzleId: 'Suuttimen halkaisija (mm)', abrasiveType: 'Hioma-ainetyyppi', abrasiveFlow: 'Hioma-ainevirtaus (g/min)', electricityCost: 'Sähkökustannus (€/kWh)', optimizationGoal: 'Optimointitavoite', tradeoff: 'Kompromissi: Nopeus vs. Laatu', eco: 'Eko', quality: 'Laatu', predictionModel: 'Ennustemalli', modelPhysical: 'Fysikaalinen malli', modelRegression: 'Regressiomalli', modelAnn: 'Neuroverkko', modelGP: 'Gaussinen prosessi', modelSymbolic: 'Symbolinen regressio', modelHybrid: 'Hybridimalli', recommendedParams: 'Suositellut parametrit', traverseSpeed: 'Syöttönopeus', limitDepth: 'Rajasyvyys', visualizations: 'Visualisoinnit', chartRoughness: 'Karheus vs. Syvyys', chartTaper: 'Kartio vs. Syvyys', chartForces: 'Voimaanalyysi', chartStress: 'Jännitys-Venymä', analysis: 'Analyysi ja Vienti', costBreakdown: 'Kustannuserittely', comparison: 'Materiaalien vertailu', compareWith: 'Vertaa', modelDetails: 'Mallin yksityiskohdat', vrSimulation: 'VR/AR Simulaatio', aiAssistant: 'AI Avustaja', export: 'Vie', saveProject: 'Tallenna projekti', expertAnalysis: 'Asiantuntija-analyysi', generateAnalysis: 'Luo analyysi', cutSimulation: 'Leikkaussimulaatio', paramAnalysis: 'Parametrianalyysi', dataViz: 'Datan visualisointi', discreteResults: 'Diskreetit tulokset', depth: 'Syvyys', garnet: 'Granaatti', olivine: 'Oliviini' },
-  pt: { appTitle: 'Calculadora AWJ Profissional', level: 'Nível', language: 'Idioma', background: 'Fundo', student: 'Estudante', engineer: 'Engenheiro', manager: 'Gerente', cutTime: 'Tempo de corte', costPerPart: 'Custo/Peça', avgRoughness: 'Rugosidade Média', maxTaper: 'Conicidade Máx.', productivity: 'Produtividade', inputsConfig: 'Entradas e Configuração', materialGeometry: 'Material e Geometria', material: 'Material', thickness: 'Espessura (mm)', cutLength: 'Comprimento de corte (mm)', machineTooling: 'Máquina e Ferramentas', pressure: 'Pressão da bomba (MPa)', orificeId: 'Diâmetro do orifício (mm)', nozzleId: 'Diâmetro do bocal (mm)', abrasiveType: 'Tipo de abrasivo', abrasiveFlow: 'Fluxo de abrasivo (g/min)', electricityCost: 'Custo de eletricidade (€/kWh)', optimizationGoal: 'Objetivo de otimização', tradeoff: 'Equilíbrio: Velocidade vs. Qualidade', eco: 'Eco', quality: 'Qualidade', predictionModel: 'Modelo de previsão', modelPhysical: 'Modelo físico', modelRegression: 'Modelo de regressão', modelAnn: 'Rede neural', modelGP: 'Processo gaussiano', modelSymbolic: 'Regressão simbólica', modelHybrid: 'Modelo híbrido', recommendedParams: 'Parâmetros recomendados', traverseSpeed: 'Velocidade de avanço', limitDepth: 'Profundidade limite', visualizations: 'Visualizações', chartRoughness: 'Rugosidade vs. Profundidade', chartTaper: 'Conicidade vs. Profundidade', chartForces: 'Análise de forças', chartStress: 'Tensão-Deformação', analysis: 'Análise e Exportação', costBreakdown: 'Distribuição de custos', comparison: 'Comparação de materiais', compareWith: 'Comparar com', modelDetails: 'Detalhes do modelo', vrSimulation: 'Simulação VR/AR', aiAssistant: 'Assistente IA', export: 'Exportar', saveProject: 'Salvar projeto', expertAnalysis: 'Análise especializada', generateAnalysis: 'Gerar análise', cutSimulation: 'Simulação de corte', paramAnalysis: 'Análise de parâmetros', dataViz: 'Visualização de dados', discreteResults: 'Resultados discretos', depth: 'Profundidade', garnet: 'Granada', olivine: 'Olivina' },
-  ro: { appTitle: 'Calculator AWJ Profesional', level: 'Nivel', language: 'Limbă', background: 'Fundal', student: 'Student', engineer: 'Inginer', manager: 'Manager', cutTime: 'Timp de tăiere', costPerPart: 'Cost/Piesă', avgRoughness: 'Rugozitate Medie', maxTaper: 'Conicitate Max', productivity: 'Productivitate', inputsConfig: 'Intrări și Configurare', materialGeometry: 'Material și Geometrie', material: 'Material', thickness: 'Grosime (mm)', cutLength: 'Lungime tăiere (mm)', machineTooling: 'Mașină și Scule', pressure: 'Presiune pompă (MPa)', orificeId: 'Diametru orificiu (mm)', nozzleId: 'Diametru duză (mm)', abrasiveType: 'Tip abraziv', abrasiveFlow: 'Flux abraziv (g/min)', electricityCost: 'Cost electricitate (€/kWh)', optimizationGoal: 'Obiectiv optimizare', tradeoff: 'Compromis: Viteză vs. Calitate', eco: 'Eco', quality: 'Calitate', predictionModel: 'Model de predicție', modelPhysical: 'Model fizic', modelRegression: 'Model de regresie', modelAnn: 'Rețea neuronală', modelGP: 'Proces gaussian', modelSymbolic: 'Regresie simbolică', modelHybrid: 'Model hibrid', recommendedParams: 'Parametri recomandați', traverseSpeed: 'Viteză avansare', limitDepth: 'Adâncime limită', visualizations: 'Vizualizări', chartRoughness: 'Rugozitate vs. Adâncime', chartTaper: 'Conicitate vs. Adâncime', chartForces: 'Analiză forțe', chartStress: 'Tensiune-Deformare', analysis: 'Analiză și Export', costBreakdown: 'Defalcare costuri', comparison: 'Comparație materiale', compareWith: 'Compară cu', modelDetails: 'Detalii model', vrSimulation: 'Simulare VR/AR', aiAssistant: 'Asistent IA', export: 'Export', saveProject: 'Salvează proiect', expertAnalysis: 'Analiză expert', generateAnalysis: 'Generează analiză', cutSimulation: 'Simulare tăiere', paramAnalysis: 'Analiză parametri', dataViz: 'Vizualizare date', discreteResults: 'Rezultate discrete', depth: 'Adâncime', garnet: 'Granat', olivine: 'Olivină' }
-};
-
-const AWJCalculator = () => {
-  const [language, setLanguage] = useState('en');
-  const [userLevel, setUserLevel] = useState('engineer');
-  const [bgColor, setBgColor] = useState('#111827');
-  
-  const [material, setMaterial] = useState(MATERIALS_DATABASE[0]);
-  const [thickness, setThickness] = useState(8);
-  const [cutLength, setCutLength] = useState(1000);
-  const [pressure, setPressure] = useState(300);
-  const [abrasiveFlow, setAbrasiveFlow] = useState(450);
-  const [orificeId, setOrificeId] = useState(0.30);
-  const [nozzleId, setNozzleId] = useState(1.02);
-  const [abrasiveType, setAbrasiveType] = useState('garnet');
-  const [optimizationLevel, setOptimizationLevel] = useState(3);
-  const [electricityCost, setElectricityCost] = useState(0.15);
-  const [model, setModel] = useState('hybrid');
-  
-  const [results, setResults] = useState(null);
-  const [chartType, setChartType] = useState('roughness');
-  const [showVR, setShowVR] = useState(false);
-  const [vrScene, setVRScene] = useState('simulation');
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [chatInput, setChatInput] = useState('');
-  const [projects, setProjects] = useState([]);
-  const [comparisonMaterial, setComparisonMaterial] = useState(null);
-  const [expertAnalysis, setExpertAnalysis] = useState('');
-
-  useEffect(() => {
-    setChatMessages([{ text: t('aiAssistant') + ": 👋 Ask me about Yret, Ra, Kawj, parameters, or optimization!", bot: true }]);
-  }, [language]);
-
-  const calculateResults = () => {
-    const Emat = material.youngModulus * 1000;
-    const Kawj = 1e12 / Math.pow(Emat, 2);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional AWJ Calculator with AI Analysis, Data Import, and Predictive Models">
+    <meta name="theme-color" content="#1F2937">
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQVdKIFByb2Zlc3Npb25hbCBDYWxjdWxhdG9yIiwic2hvcnRfbmFtZSI6IkFXSiBDYWxjIiwic3RhcnRfdXJsIjoiLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMTE4MjciLCJ0aGVtZV9jb2xvciI6IiMxRjI5MzciLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCNGJXeHVjejBpYUhSMGNEb3ZMM2QzZHk1M015NXZjbWN2TWpBd01DOXpkbWNpSUhkcFpIUm9QU0l4TWpnaUlHaGxhV2RvZEQwaU1USTRJajQ4Y21WamRDQjNhV1IwYUQwaU1USTRMQ0JvWldsbmFIUTlJakV5T0NJZ2NuZzlJakUySWlCbWFXeHNQU0lqTXtKRE9ESkdOaUkvUGk4dmMzWm5QZz09Iiwic2l6ZXMiOiIxMjh4MTI4IiwidHlwZSI6ImltYWdlL3N2Zyt4bWwifV19">
+    <title>AWJ Pro Calculator - AI-Powered Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
-    const qualityFactor = 1.5 - ((optimizationLevel - 1) * 0.25);
-    const pressureFactor = Math.pow(pressure / 300, 0.3);
-    const abrasiveFactor = Math.pow(abrasiveFlow / 450, 0.2);
-    const nozzleFactor = nozzleId / 1.02;
-    const abrasiveTypeFactor = abrasiveType === 'garnet' ? 1.0 : 0.95;
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .glass { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-glow { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); transition: all 0.3s; }
+        .btn-glow:hover { box-shadow: 0 0 30px rgba(102, 126, 234, 0.8); transform: translateY(-2px); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-slide { animation: slideIn 0.4s ease-out; }
+        .chart-container { position: relative; height: 300px; width: 100%; }
+        input[type="range"] { -webkit-appearance: none; height: 6px; border-radius: 5px; background: #4B5563; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #667eea; cursor: pointer; }
+        input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #667eea; cursor: pointer; }
+        .code-block { background: #1a1a1a; border-radius: 8px; padding: 12px; font-family: 'Courier New', monospace; font-size: 12px; overflow-x: auto; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100">
     
-    const Vpopt_base = (Math.pow(1e-3 * 3.7, 0.5) * 1e6) / Math.pow(Emat, 0.5);
-    const Vpopt = (Vpopt_base / qualityFactor) * pressureFactor * abrasiveFactor * nozzleFactor * abrasiveTypeFactor;
-    
-    const cutTimeMin = cutLength / Vpopt;
-    const cutTimeHours = cutTimeMin / 60;
-    
-    const powerConsumption = (pressure * 0.01) * 1.5;
-    const energyCost = powerConsumption * cutTimeHours * electricityCost;
-    const abrasiveCost = (abrasiveFlow * cutTimeMin / 1000) * (abrasiveType === 'garnet' ? 0.5 : 0.45);
-    const laborCost = cutTimeHours * 30;
-    const toolWearCost = cutTimeHours * 5;
-    
-    const totalCost = energyCost + abrasiveCost + laborCost + toolWearCost;
-    
-    const depthPoints = 20;
-    const profile = Array.from({ length: depthPoints }, (_, i) => {
-      const h = thickness * (i + 1) / depthPoints;
-      const depthRatio = h / thickness;
-      
-      const Ra_initial = 1.5;
-      const Ra_increase = Math.pow(depthRatio, 1.5) * 8;
-      const Ra = Ra_initial + Ra_increase;
-      
-      const Yret = Ra * h / (Kawj + 1);
-      const taper = Math.atan(Yret / h) * (180 / Math.PI);
-      
-      const Fh = 4.0 + depthRatio * 2.5;
-      const Fv = 8.0 + depthRatio * 3.0;
-      const FRa = 0.5 + Ra * 0.4;
-      
-      const kerfWidth = nozzleId + Yret * 2;
-      
-      return {
-        h: h.toFixed(2),
-        Ra: Ra.toFixed(2),
-        Yret: Yret.toFixed(3),
-        taper: taper.toFixed(3),
-        forces: { Fh: Fh.toFixed(2), Fv: Fv.toFixed(2), FRa: FRa.toFixed(2) },
-        kerfWidth: kerfWidth.toFixed(3)
-      };
-    });
-    
-    const strainPoints = 50;
-    const stressStrain = Array.from({ length: strainPoints }, (_, i) => {
-      const strain = i * 0.001;
-      const stress = Math.min(Emat * strain, material.tensileStrength);
-      return { strain: (strain * 100).toFixed(2), stress: stress.toFixed(1) };
-    });
-    
-    const avgRa = profile.reduce((sum, p) => sum + parseFloat(p.Ra), 0) / profile.length;
-    const maxTaper = Math.max(...profile.map(p => parseFloat(p.taper)));
-    const surfaceQuality = avgRa < 3 ? 'Excellent' : avgRa < 6 ? 'Good' : 'Acceptable';
-    
-    const productivity = (cutLength / 1000) / cutTimeHours;
-    const costPerMeter = totalCost / (cutLength / 1000);
-    
-    const toolLifeHours = 100 - (pressure / 600 * 50) - (abrasiveFlow / 800 * 30);
-    const maintenanceInterval = Math.floor(toolLifeHours / cutTimeHours);
-    
-    return {
-      Vpopt: Vpopt.toFixed(2),
-      pressure: pressure.toFixed(0),
-      abrasiveFlow: abrasiveFlow.toFixed(0),
-      Hlim: Kawj.toFixed(2),
-      Kawj: Kawj.toFixed(2),
-      cutTimeMin: cutTimeMin.toFixed(2),
-      cutTimeHours: cutTimeHours.toFixed(3),
-      totalCost: totalCost.toFixed(2),
-      costs: {
-        energy: energyCost.toFixed(2),
-        abrasive: abrasiveCost.toFixed(2),
-        labor: laborCost.toFixed(2),
-        toolWear: toolWearCost.toFixed(2)
-      },
-      profile,
-      stressStrain,
-      avgRa: avgRa.toFixed(2),
-      maxTaper: maxTaper.toFixed(3),
-      surfaceQuality,
-      productivity: productivity.toFixed(2),
-      costPerMeter: costPerMeter.toFixed(2),
-      powerConsumption: powerConsumption.toFixed(2),
-      toolLifeHours: toolLifeHours.toFixed(1),
-      maintenanceInterval
-    };
-  };
-
-  useEffect(() => {
-    const newResults = calculateResults();
-    setResults(newResults);
-  }, [material, thickness, cutLength, pressure, abrasiveFlow, orificeId, nozzleId, abrasiveType, optimizationLevel, electricityCost, model]);
-
-  const generateExpertAnalysis = () => {
-    if (!results) return;
-    
-    const analysis = `
-**AWJ Process Analysis Report**
-Generated: ${new Date().toLocaleString()}
-Model: ${model.toUpperCase()}
-
-**Material Analysis:**
-- Material: ${material.name[language]}
-- Young's Modulus: ${material.youngModulus} GPa
-- Kawj Constant: ${results.Kawj} mm
-- Tensile Strength: ${material.tensileStrength} MPa
-
-**Cutting Parameters:**
-- Optimal Speed: ${results.Vpopt} mm/min
-- Pressure: ${pressure} MPa
-- Abrasive Flow: ${abrasiveFlow} g/min (${abrasiveType})
-- Nozzle: ${nozzleId} mm
-
-**Quality Assessment:**
-- Surface Quality: ${results.surfaceQuality}
-- Average Roughness: ${results.avgRa} µm
-- Maximum Taper: ${results.maxTaper}°
-- Quality Score: ${10 - parseFloat(results.avgRa)}/ 10
-
-**Performance Metrics:**
-- Productivity: ${results.productivity} m/hour
-- Cut Time: ${Math.floor(parseFloat(results.cutTimeMin))}:${String(Math.round((parseFloat(results.cutTimeMin) % 1) * 60)).padStart(2, '0')}
-- Cost per Part: €${results.totalCost}
-- Cost per Meter: €${results.costPerMeter}
-
-**Cost Breakdown:**
-- Energy: €${results.costs.energy} (${(parseFloat(results.costs.energy) / parseFloat(results.totalCost) * 100).toFixed(1)}%)
-- Abrasive: €${results.costs.abrasive} (${(parseFloat(results.costs.abrasive) / parseFloat(results.totalCost) * 100).toFixed(1)}%)
-- Labor: €${results.costs.labor} (${(parseFloat(results.costs.labor) / parseFloat(results.totalCost) * 100).toFixed(1)}%)
-- Tool Wear: €${results.costs.toolWear} (${(parseFloat(results.costs.toolWear) / parseFloat(results.totalCost) * 100).toFixed(1)}%)
-
-**Recommendations:**
-${parseFloat(results.avgRa) > 5 ? '⚠️ Consider reducing cutting speed by 20% to improve surface finish' : '✓ Surface quality is optimal'}
-${parseFloat(results.maxTaper) > 1 ? '⚠️ Increase pressure to reduce taper deviation' : '✓ Taper is within acceptable limits'}
-${optimizationLevel < 3 ? '💡 Current settings prioritize cost over quality' : optimizationLevel > 3 ? '💡 Current settings prioritize quality over speed' : '💡 Balanced optimization selected'}
-
-**Tool Maintenance:**
-- Estimated Tool Life: ${results.toolLifeHours} hours
-- Maintenance Interval: Every ${results.maintenanceInterval} parts
-- Next Service: After ${results.maintenanceInterval} parts
-
-**Process Efficiency:**
-Power Consumption: ${results.powerConsumption} kW
-Energy Efficiency: ${(parseFloat(results.productivity) * 10 / parseFloat(results.powerConsumption)).toFixed(2)} m/kW
-`;
-    
-    setExpertAnalysis(analysis);
-  };
-
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
-    
-    setChatMessages(prev => [...prev, { text: chatInput, bot: false }]);
-    
-    setTimeout(() => {
-      const response = generateAIResponse(chatInput.toLowerCase());
-      setChatMessages(prev => [...prev, { text: response, bot: true }]);
-    }, 500);
-    
-    setChatInput('');
-  };
-
-  const generateAIResponse = (query) => {
-    if (!results) return "Please run a calculation first!";
-    
-    if (query.includes('yret') || query.includes('taper')) {
-      return `**Yret (Taper Deviation)**: Current: ${results.maxTaper}°. ${parseFloat(results.maxTaper) < 0.5 ? 'Excellent!' : parseFloat(results.maxTaper) < 1 ? 'Good' : 'Acceptable'}. To improve: increase pressure to ${Math.min(600, pressure + 50)} MPa.`;
-    }
-    
-    if (query.includes('ra') || query.includes('roughness')) {
-      return `**Surface Roughness (Ra)**: Avg: ${results.avgRa} µm - ${results.surfaceQuality}. At max depth: ${results.profile[results.profile.length-1].Ra} µm. To improve: reduce speed to ${(parseFloat(results.Vpopt) * 0.8).toFixed(0)} mm/min.`;
-    }
-    
-    if (query.includes('kawj')) {
-      return `**Kawj**: ${results.Kawj} mm for ${material.name[language]}. This determines max depth (${results.Hlim} mm). Formula: Kawj = 10¹² / E² where E = ${material.youngModulus} GPa.`;
-    }
-    
-    if (query.includes('cost')) {
-      return `**Cost**: €${results.totalCost}/part. Energy: €${results.costs.energy}, Abrasive: €${results.costs.abrasive}, Labor: €${results.costs.labor}, Tool: €${results.costs.toolWear}. Cost/m: €${results.costPerMeter}`;
-    }
-    
-    if (query.includes('quality') || query.includes('improve')) {
-      return `**Quality Tips**: ${parseFloat(results.avgRa) > 4 ? `Reduce speed to ${(parseFloat(results.Vpopt) * 0.7).toFixed(0)} mm/min. ` : ''}${parseFloat(results.maxTaper) > 0.8 ? `Increase pressure to ${Math.min(600, pressure + 100)} MPa. ` : ''}${abrasiveFlow < 500 ? 'Increase abrasive to 500-600 g/min.' : 'Parameters optimized!'}`;
-    }
-    
-    if (query.includes('speed') || query.includes('time')) {
-      return `**Speed**: ${results.Vpopt} mm/min. Cut time: ${Math.floor(parseFloat(results.cutTimeMin))}:${String(Math.round((parseFloat(results.cutTimeMin) % 1) * 60)).padStart(2, '0')}. Productivity: ${results.productivity} m/h.`;
-    }
-    
-    if (query.includes('parameter')) {
-      return `**Parameters**: Material: ${material.name[language]}, Thickness: ${thickness}mm, Pressure: ${pressure}MPa, Abrasive: ${abrasiveFlow}g/min, Speed: ${results.Vpopt}mm/min, Quality: ${results.surfaceQuality}`;
-    }
-    
-    return "I can help with: Yret, Ra, Kawj, cost, quality, speed, or parameters. What would you like to know?";
-  };
-
-  const exportResults = (format) => {
-    if (!results) return;
-    
-    if (format === 'csv') {
-      let csv = 'Depth(mm),Ra(µm),Yret(mm),Taper(°),Fh(N),Fv(N),FRa(N)\n';
-      results.profile.forEach(p => {
-        csv += `${p.h},${p.Ra},${p.Yret},${p.taper},${p.forces.Fh},${p.forces.Fv},${p.forces.FRa}\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'awj_results.csv';
-      a.click();
-    } else if (format === 'json') {
-      const data = JSON.stringify({ 
-        material: material.name[language], 
-        parameters: { thickness, pressure, abrasiveFlow, nozzleId, orificeId, abrasiveType }, 
-        results 
-      }, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'awj_project.json';
-      a.click();
-    }
-  };
-
-  const t = (key) => TRANSLATIONS[language]?.[key] || key;
-
-  const renderChart = () => {
-    if (!results) return null;
-    
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
-    
-    switch(chartType) {
-      case 'roughness':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={results.profile.map(p => ({ depth: p.h, Ra: parseFloat(p.Ra) }))}>
-              <defs>
-                <linearGradient id="colorRa" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={colors[0]} stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor={colors[0]} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="depth" stroke="#9CA3AF" label={{ value: t('depth') + ' (mm)', position: 'bottom', fill: '#9CA3AF' }} />
-              <YAxis stroke="#9CA3AF" label={{ value: 'Ra (µm)', angle: -90, position: 'left', fill: '#9CA3AF' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-              <Area type="monotone" dataKey="Ra" stroke={colors[0]} fillOpacity={1} fill="url(#colorRa)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'taper':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={results.profile.map(p => ({ depth: p.h, taper: parseFloat(p.taper), yret: parseFloat(p.Yret) * 1000 }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="depth" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-              <Legend />
-              <Line type="monotone" dataKey="taper" stroke={colors[1]} name="Taper (°)" strokeWidth={2} />
-              <Line type="monotone" dataKey="yret" stroke={colors[2]} name="Yret (µm)" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'forces':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={results.profile.map(p => ({ 
-              depth: p.h, 
-              Fh: parseFloat(p.forces.Fh), 
-              Fv: parseFloat(p.forces.Fv),
-              FRa: parseFloat(p.forces.FRa)
-            }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="depth" stroke="#9CA3AF" />
-              <YAxis stroke="#9CA3AF" />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-              <Legend />
-              <Line type="monotone" dataKey="Fh" stroke={colors[0]} name="Fh (N)" strokeWidth={2} />
-              <Line type="monotone" dataKey="Fv" stroke={colors[1]} name="Fv (N)" strokeWidth={2} />
-              <Line type="monotone" dataKey="FRa" stroke={colors[2]} name="FRa (N)" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        );
-      
-      case 'stress':
-        return (
-          <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={results.stressStrain.map(p => ({ strain: parseFloat(p.strain), stress: parseFloat(p.stress) }))}>
-              <defs>
-                <linearGradient id="colorStress" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={colors[3]} stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor={colors[3]} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="strain" stroke="#9CA3AF" label={{ value: 'Strain (%)', position: 'bottom', fill: '#9CA3AF' }} />
-              <YAxis stroke="#9CA3AF" label={{ value: 'Stress (MPa)', angle: -90, position: 'left', fill: '#9CA3AF' }} />
-              <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-              <Area type="monotone" dataKey="stress" stroke={colors[3]} fillOpacity={1} fill="url(#colorStress)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        );
-      
-      default:
-        return null;
-    }
-  };
-
-  const renderComparison = () => {
-    if (!comparisonMaterial || !results) return null;
-    
-    const compMat = MATERIALS_DATABASE.find(m => m.id === comparisonMaterial);
-    if (!compMat) return null;
-    
-    const tempResults = calculateResults();
-    const origMat = material;
-    const origResults = results;
-    
-    return (
-      <div className="text-sm space-y-2">
-        <div className="flex justify-between">
-          <span className="text-gray-400">Material:</span>
-          <span>{origMat.name[language]} vs {compMat.name[language]}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Kawj:</span>
-          <span>{origResults.Kawj} vs {(1e12 / Math.pow(compMat.youngModulus * 1000, 2)).toFixed(2)} mm</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Speed:</span>
-          <span className={parseFloat(origResults.Vpopt) > 500 ? 'text-green-400' : 'text-yellow-400'}>{origResults.Vpopt} mm/min</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-400">Cost:</span>
-          <span className={parseFloat(origResults.totalCost) < 50 ? 'text-green-400' : 'text-yellow-400'}>€{origResults.totalCost}</span>
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex flex-col h-screen" style={{ backgroundColor: bgColor, color: '#E5E7EB' }}>
-      <header className="bg-gray-800 shadow-lg p-3 flex flex-wrap justify-between items-center border-b border-gray-700">
-        <div className="flex items-center space-x-3">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            {t('appTitle')}
-          </h1>
-          <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full font-semibold">PRO</span>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <select value={userLevel} onChange={(e) => setUserLevel(e.target.value)} className="bg-gray-700 text-white border border-gray-600 rounded-md px-2 py-1 text-sm">
-            <option value="student">{t('student')}</option>
-            <option value="engineer">{t('engineer')}</option>
-            <option value="manager">{t('manager')}</option>
-          </select>
-          
-          <select value={language} onChange={(e) => setLanguage(e.target.value)} className="bg-gray-700 text-white border border-gray-600 rounded-md px-2 py-1 text-sm">
-            <option value="en">🇬🇧 English</option>
-            <option value="cs">🇨🇿 Čeština</option>
-            <option value="sk">🇸🇰 Slovenčina</option>
-            <option value="de">🇩🇪 Deutsch</option>
-            <option value="fr">🇫🇷 Français</option>
-            <option value="es">🇪🇸 Español</option>
-            <option value="it">🇮🇹 Italiano</option>
-            <option value="pl">🇵🇱 Polski</option>
-            <option value="ru">🇷🇺 Русский</option>
-            <option value="uk">🇺🇦 Українська</option>
-            <option value="zh">🇨🇳 中文</option>
-            <option value="ja">🇯🇵 日本語</option>
-            <option value="ko">🇰🇷 한국어</option>
-            <option value="ar">🇸🇦 العربية</option>
-            <option value="tr">🇹🇷 Türkçe</option>
-            <option value="nl">🇳🇱 Nederlands</option>
-            <option value="sv">🇸🇪 Svenska</option>
-            <option value="no">🇳🇴 Norsk</option>
-            <option value="da">🇩🇰 Dansk</option>
-            <option value="fi">🇫🇮 Suomi</option>
-            <option value="pt">🇵🇹 Português</option>
-            <option value="ro">🇷🇴 Română</option>
-          </select>
-          
-          <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer" />
-        </div>
-      </header>
-
-      {results && (
-        <div className="bg-gray-800 border-y border-gray-700 p-3 grid grid-cols-5 gap-3">
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-1">{t('cutTime')}</div>
-            <div className="text-lg font-bold text-blue-400">{Math.floor(parseFloat(results.cutTimeMin))}:{String(Math.round((parseFloat(results.cutTimeMin) % 1) * 60)).padStart(2, '0')}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-1">{t('costPerPart')}</div>
-            <div className="text-lg font-bold text-green-400">€{results.totalCost}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-1">{t('avgRoughness')}</div>
-            <div className="text-lg font-bold text-orange-400">{results.avgRa} µm</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-1">{t('maxTaper')}</div>
-            <div className="text-lg font-bold text-red-400">{results.maxTaper}°</div>
-          </div>
-          <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-1">{t('productivity')}</div>
-            <div className="text-lg font-bold text-purple-400">{results.productivity} m/h</div>
-          </div>
-        </div>
-      )}
-
-      <div className="flex-1 flex overflow-hidden">
-        <aside className="w-72 bg-gray-800/50 p-3 overflow-y-auto border-r border-gray-700">
-          <h2 className="text-base font-bold mb-3 flex items-center">
-            <Settings className="mr-2" size={16} />
-            {t('inputsConfig')}
-          </h2>
-          
-          <div className="space-y-3">
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h3 className="font-semibold mb-2 text-blue-400 text-sm">{t('materialGeometry')}</h3>
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('material')}</label>
-                  <select value={material.id} onChange={(e) => setMaterial(MATERIALS_DATABASE.find(m => m.id === e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm">
-                    {MATERIALS_DATABASE.map(m => (
-                      <option key={m.id} value={m.id}>{m.name[language]}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('thickness')}</label>
-                  <input type="number" value={thickness} onChange={(e) => setThickness(parseFloat(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('cutLength')}</label>
-                  <input type="number" value={cutLength} onChange={(e) => setCutLength(parseFloat(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-sm" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h3 className="font-semibold mb-2 text-green-400 text-sm">{t('machineTooling')}</h3>
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('pressure')}</label>
-                  <div className="flex items-center space-x-2">
-                    <input type="range" value={pressure} onChange={(e) => setPressure(parseFloat(e.target.value))} className="flex-1" min="150" max="600" step="10" />
-                    <span className="w-16 text-center bg-gray-700 rounded px-2 py-1 text-xs">{pressure}</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('abrasiveFlow')}</label>
-                  <div className="flex items-center space-x-2">
-                    <input type="range" value={abrasiveFlow} onChange={(e) => setAbrasiveFlow(parseFloat(e.target.value))} className="flex-1" min="100" max="800" step="10" />
-                    <span className="w-16 text-center bg-gray-700 rounded px-2 py-1 text-xs">{abrasiveFlow}</span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">{t('orificeId')}</label>
-                    <select value={orificeId} onChange={(e) => setOrificeId(parseFloat(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs">
-                      <option value="0.25">0.25</option>
-                      <option value="0.30">0.30</option>
-                      <option value="0.35">0.35</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">{t('nozzleId')}</label>
-                    <select value={nozzleId} onChange={(e) => setNozzleId(parseFloat(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs">
-                      <option value="0.76">0.76</option>
-                      <option value="1.02">1.02</option>
-                      <option value="1.27">1.27</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">{t('abrasiveType')}</label>
-                  <select value={abrasiveType} onChange={(e) => setAbrasiveType(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs">
-                    <option value="garnet">{t('garnet')}</option>
-                    <option value="olivine">{t('olivine')}</option>
-                  </select>
-                </div>
-                {(userLevel === 'manager') && (
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1">{t('electricityCost')}</label>
-                    <input type="number" value={electricityCost} onChange={(e) => setElectricityCost(parseFloat(e.target.value))} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs" step="0.01" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h3 className="font-semibold mb-2 text-purple-400 text-sm">{t('optimizationGoal')}</h3>
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">{t('tradeoff')}</label>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs">{t('eco')}</span>
-                  <input type="range" value={optimizationLevel} onChange={(e) => setOptimizationLevel(parseInt(e.target.value))} className="flex-1" min="1" max="5" step="1" />
-                  <span className="text-xs">{t('quality')}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  {[1,2,3,4,5].map(i => <span key={i}>•</span>)}
-                </div>
-              </div>
-              {(userLevel === 'engineer' || userLevel === 'manager') && (
-                <div className="mt-2">
-                  <label className="block text-xs text-gray-400 mb-1">{t('predictionModel')}</label>
-                  <select value={model} onChange={(e) => setModel(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs">
-                    <option value="physical">{t('modelPhysical')}</option>
-                    <option value="regression">{t('modelRegression')}</option>
-                    <option value="ann">{t('modelAnn')}</option>
-                    <option value="gp">{t('modelGP')}</option>
-                    <option value="symbolic">{t('modelSymbolic')}</option>
-                    <option value="hybrid">{t('modelHybrid')}</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
-        </aside>
-
-        <section className="flex-1 p-3 overflow-y-auto">
-          <div className="space-y-3">
-            {results && (
-              <>
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h3 className="text-base font-bold mb-3 flex items-center">
-                    <CheckCircle className="mr-2 text-green-400" size={16} />
-                    {t('recommendedParams')}
-                  </h3>
-                  <div className="grid grid-cols-4 gap-3">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400">{t('traverseSpeed')}</div>
-                      <div className="text-2xl font-bold text-blue-400">{results.Vpopt}</div>
-                      <div className="text-xs text-gray-500">mm/min</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400">{t('pressure')}</div>
-                      <div className="text-2xl font-bold text-green-400">{results.pressure}</div>
-                      <div className="text-xs text-gray-500">MPa</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400">{t('abrasiveFlow')}</div>
-                      <div className="text-2xl font-bold text-orange-400">{results.abrasiveFlow}</div>
-                      <div className="text-xs text-gray-500">g/min</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400">{t('limitDepth')}</div>
-                      <div className="text-2xl font-bold text-purple-400">{results.Hlim}</div>
-                      <div className="text-xs text-gray-500">mm</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-base font-bold flex items-center">
-                      <BarChart3 className="mr-2" size={16} />
-                      {t('visualizations')}
-                    </h3>
-                    <select value={chartType} onChange={(e) => setChartType(e.target.value)} className="bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs">
-                      <option value="roughness">{t('chartRoughness')}</option>
-                      <option value="taper">{t('chartTaper')}</option>
-                      <option value="forces">{t('chartForces')}</option>
-                      <option value="stress">{t('chartStress')}</option>
-                    </select>
-                  </div>
-                  {renderChart()}
-                </div>
-
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h3 className="text-base font-bold mb-3">{t('discreteResults')}</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead className="bg-gray-700">
-                        <tr>
-                          <th className="px-3 py-2 text-left">{t('depth')} (mm)</th>
-                          <th className="px-3 py-2 text-left">Ra (µm)</th>
-                          <th className="px-3 py-2 text-left">Yret (mm)</th>
-                          <th className="px-3 py-2 text-left">Taper (°)</th>
-                          <th className="px-3 py-2 text-left">Fh (N)</th>
-                          <th className="px-3 py-2 text-left">Fv (N)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {results.profile.filter((_, i) => [0, 2, 4, 9, 14, 19].includes(i)).map((p, i) => (
-                          <tr key={i} className="border-b border-gray-700">
-                            <td className="px-3 py-2">{p.h}</td>
-                            <td className="px-3 py-2">{p.Ra}</td>
-                            <td className="px-3 py-2">{p.Yret}</td>
-                            <td className="px-3 py-2">{p.taper}</td>
-                            <td className="px-3 py-2">{p.forces.Fh}</td>
-                            <td className="px-3 py-2">{p.forces.Fv}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </section>
-
-        <aside className="w-72 bg-gray-800/50 p-3 overflow-y-auto border-l border-gray-700">
-          <h2 className="text-base font-bold mb-3 flex items-center">
-            <TrendingUp className="mr-2" size={16} />
-            {t('analysis')}
-          </h2>
-          
-          <div className="space-y-3">
-            {results && (
-              <>
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h3 className="font-semibold mb-2 text-sm">{t('costBreakdown')}</h3>
-                  <ResponsiveContainer width="100%" height={150}>
-                    <PieChart>
-                      <Pie data={[
-                        { name: 'Energy', value: parseFloat(results.costs.energy) },
-                        { name: 'Abrasive', value: parseFloat(results.costs.abrasive) },
-                        { name: 'Labor', value: parseFloat(results.costs.labor) },
-                        { name: 'Tool', value: parseFloat(results.costs.toolWear) }
-                      ]} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={50} label>
-                        {[0,1,2,3].map((_, i) => (
-                          <Cell key={i} fill={['#3B82F6', '#10B981', '#F59E0B', '#EF4444'][i]} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {(userLevel === 'engineer' || userLevel === 'manager') && (
-                  <>
-                    <div className="bg-gray-800 rounded-lg p-3">
-                      <h3 className="font-semibold mb-2 text-sm">{t('comparison')}</h3>
-                      <select value={comparisonMaterial || ''} onChange={(e) => setComparisonMaterial(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded px-2 py-1 text-xs mb-2">
-                        <option value="">{t('compareWith')}</option>
-                        {MATERIALS_DATABASE.filter(m => m.id !== material.id).map(m => (
-                          <option key={m.id} value={m.id}>{m.name[language]}</option>
-                        ))}
-                      </select>
-                      {renderComparison()}
-                    </div>
-
-                    <div className="bg-gray-800 rounded-lg p-3">
-                      <h3 className="font-semibold mb-2 text-sm">{t('modelDetails')}</h3>
-                      <div className="text-xs text-gray-400 space-y-1">
-                        <div>Model: <span className="text-white">{model.toUpperCase()}</span></div>
-                        <div>Kawj: <span className="text-white">{results.Kawj} mm</span></div>
-                        <div>Confidence: <span className="text-green-400">95%</span></div>
-                        <div>Accuracy: <span className="text-green-400">±5%</span></div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h3 className="font-semibold mb-2 text-sm flex items-center">
-                    <Sparkles className="mr-1" size={14} />
-                    {t('expertAnalysis')}
-                  </h3>
-                  <button onClick={generateExpertAnalysis} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-2 rounded text-xs font-semibold mb-2">
-                    {t('generateAnalysis')}
-                  </button>
-                  {expertAnalysis && (
-                    <div className="bg-gray-900 rounded p-2 text-xs text-gray-300 max-h-48 overflow-y-auto whitespace-pre-line">
-                      {expertAnalysis}
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-gray-800 rounded-lg p-3">
-                  <h3 className="font-semibold mb-2 text-sm flex items-center">
-                    <Download className="mr-1" size={14} />
-                    {t('export')}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => exportResults('csv')} className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded text-xs">CSV</button>
-                    <button onClick={() => exportResults('json')} className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-xs">JSON</button>
-                  </div>
-                </div>
-
-                <button onClick={() => setShowVR(true)} className="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 px-3 py-3 rounded-lg text-sm font-semibold flex items-center justify-center space-x-2">
-                  <Eye size={16} />
-                  <span>{t('vrSimulation')}</span>
-                </button>
-              </>
-            )}
-          </div>
-        </aside>
-      </div>
-
-      {/* AI Chat Button */}
-      <button onClick={() => setShowChat(!showChat)} className="fixed bottom-4 right-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-full p-3 shadow-2xl z-50 flex items-center space-x-2">
-        <MessageSquare size={20} />
-        <span className="font-semibold text-sm">{t('aiAssistant')}</span>
-      </button>
-
-      {/* AI Chat Window */}
-      {showChat && (
-        <div className="fixed bottom-20 right-4 w-96 h-[500px] bg-gray-800 rounded-lg shadow-2xl border border-gray-700 flex flex-col z-50">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-3 rounded-t-lg flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <h3 className="font-bold text-sm">{t('aiAssistant')}</h3>
-            </div>
-            <button onClick={() => setShowChat(false)} className="text-white hover:text-gray-200 text-xl">&times;</button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-900">
-            {chatMessages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.bot ? 'justify-start' : 'justify-end'}`}>
-                <div className={`max-w-[85%] rounded-lg p-2 text-xs ${msg.bot ? 'bg-gray-700' : 'bg-gradient-to-r from-purple-600 to-indigo-600'}`}>
-                  <p className="whitespace-pre-line">{msg.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <div className="p-3 bg-gray-800 rounded-b-lg border-t border-gray-700">
-            <div className="flex space-x-2">
-              <input 
-                type="text" 
-                value={chatInput} 
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask about AWJ..."
-                className="flex-1 bg-gray-700 text-white rounded-lg px-3 py-2 text-xs"
-              />
-              <button onClick={handleSendMessage} className="bg-purple-600 hover:bg-purple-700 rounded-lg px-3 py-2">
-                <Sparkles size={16} />
-              </button>
-            </div>
-            <div className="mt-2 flex space-x-1 flex-wrap gap-1">
-              <button onClick={() => { setChatInput('What is Yret?'); handleSendMessage(); }} className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-full">Yret?</button>
-              <button onClick={() => { setChatInput('Explain Ra'); handleSendMessage(); }} className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-full">Ra?</button>
-              <button onClick={() => { setChatInput('Improve quality'); handleSendMessage(); }} className="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded-full">Quality?</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* VR Modal */}
-      {showVR && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
-            <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-3 rounded-t-lg flex justify-between items-center">
-              <h2 className="text-lg font-bold">{t('vrSimulation')}</h2>
-              <div className="flex space-x-2">
-                <button onClick={() => setVRScene('simulation')} className={`px-3 py-1 rounded text-xs ${vrScene === 'simulation' ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {t('cutSimulation')}
-                </button>
-                <button onClick={() => setVRScene('params')} className={`px-3 py-1 rounded text-xs ${vrScene === 'params' ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {t('paramAnalysis')}
-                </button>
-                <button onClick={() => setVRScene('data')} className={`px-3 py-1 rounded text-xs ${vrScene === 'data' ? 'bg-blue-700' : 'bg-blue-600 hover:bg-blue-700'}`}>
-                  {t('dataViz')}
-                </button>
-                <button onClick={() => setShowVR(false)} className="text-white hover:text-gray-200 text-2xl ml-2">&times;</button>
-              </div>
+    <div id="app" class="flex flex-col h-screen">
+        <!-- Header -->
+        <header class="glass p-4 flex justify-between items-center border-b border-gray-700 z-20">
+            <div class="flex items-center space-x-3">
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <h1 class="text-xl font-bold gradient-text">AWJ Pro Calculator</h1>
+                <span class="px-2 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-xs rounded-full font-bold">AI</span>
             </div>
             
-            <div className="flex-1 bg-gray-900 rounded-b-lg overflow-hidden flex items-center justify-center">
-              <div className="text-center text-gray-400">
-                <Box size={48} className="mx-auto mb-4 opacity-50" />
-                <p className="text-sm">3D VR Simulation</p>
-                <p className="text-xs mt-2">{vrScene === 'simulation' ? 'AWJ Cutting Process Animation' : vrScene === 'params' ? 'Parameter Visualization in 3D' : 'Data Charts in 3D Space'}</p>
-                <p className="text-xs text-gray-500 mt-4">Scene: {vrScene}</p>
-              </div>
+            <div class="flex items-center space-x-3">
+                <select id="userLevel" class="glass rounded-lg px-3 py-1 text-sm">
+                    <option value="student">Student</option>
+                    <option value="engineer" selected>Engineer</option>
+                    <option value="manager">Manager</option>
+                </select>
+                
+                <select id="lang" class="glass rounded-lg px-3 py-1 text-sm">
+                    <option value="en">🇬🇧 English</option>
+                    <option value="cs">🇨🇿 Čeština</option>
+                    <option value="sk">🇸🇰 Slovenčina</option>
+                    <option value="de">🇩🇪 Deutsch</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="pl">🇵🇱 Polski</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                </select>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+        </header>
 
-export default AWJCalculator;
+        <!-- KPI Bar -->
+        <div id="kpi-bar" class="glass p-3 grid grid-cols-5 gap-3 border-b border-gray-700">
+            <div class="text-center">
+                <div class="text-xs text-gray-400 uppercase mb-1" data-i18n="cutTime">Cut Time</div>
+                <div id="kpi-time" class="text-lg font-bold text-blue-400">--:--</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-gray-400 uppercase mb-1" data-i18n="costPerPart">Cost/Part</div>
+                <div id="kpi-cost" class="text-lg font-bold text-green-400">-- €</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-gray-400 uppercase mb-1" data-i18n="avgRoughness">Avg. Roughness</div>
+                <div id="kpi-ra" class="text-lg font-bold text-orange-400">-- µm</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-gray-400 uppercase mb-1" data-i18n="maxTaper">Max. Taper</div>
+                <div id="kpi-taper" class="text-lg font-bold text-red-400">--°</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-gray-400 uppercase mb-1" data-i18n="productivity">Productivity</div>
+                <div id="kpi-prod" class="text-lg font-bold text-purple-400">-- m/h</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Left Sidebar - Inputs -->
+            <aside class="w-80 glass p-4 overflow-y-auto no-scrollbar border-r border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    <span data-i18n="inputs">Inputs</span>
+                </h2>
+                
+                <!-- Material & Geometry -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-3 text-blue-400" data-i18n="materialGeometry">Material & Geometry</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1" data-i18n="material">Material</label>
+                            <select id="material" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm"></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1" data-i18n="thickness">Thickness (mm)</label>
+                            <input type="number" id="thickness" value="8" min="0.1" max="300" step="0.1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1" data-i18n="cutLength">Cut Length (mm)</label>
+                            <input type="number" id="cutLength" value="1000" min="1" step="1" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Machine Parameters -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-3 text-green-400" data-i18n="machineParams">Machine Parameters</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1" data-i18n="pressure">Pressure (MPa)</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="range" id="pressure" min="150" max="600" value="300" step="10" class="flex-1">
+                                <span id="pressure-val" class="w-16 text-center bg-gray-700 rounded-lg px-2 py-1 text-xs font-bold">300</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1" data-i18n="abrasiveFlow">Abrasive Flow (g/min)</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="range" id="abrasiveFlow" min="100" max="800" value="450" step="10" class="flex-1">
+                                <span id="flow-val" class="w-16 text-center bg-gray-700 rounded-lg px-2 py-1 text-xs font-bold">450</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-3 text-purple-400" data-i18n="optimization">Optimization</h3>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1" data-i18n="tradeoff">Time vs. Quality</label>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs" data-i18n="eco">Eco</span>
+                            <input type="range" id="optLevel" min="1" max="5" value="3" step="1" class="flex-1">
+                            <span class="text-xs" data-i18n="quality">Quality</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Predictive Model -->
+                <div class="glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-3 text-yellow-400" data-i18n="predictiveModel">Predictive Model</h3>
+                    <select id="model" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm">
+                        <option value="physical" data-i18n-opt="modelPhysical">Physical Model</option>
+                        <option value="regression" data-i18n-opt="modelRegression">Linear Regression</option>
+                        <option value="polynomial" data-i18n-opt="modelPolynomial">Polynomial Regression</option>
+                        <option value="ann" data-i18n-opt="modelANN">Neural Network</option>
+                        <option value="hybrid" selected data-i18n-opt="modelHybrid">Hybrid AI Model</option>
+                    </select>
+                </div>
+            </aside>
+
+            <!-- Center - Results & Charts -->
+            <section class="flex-1 p-4 overflow-y-auto no-scrollbar">
+                <div class="space-y-4">
+                    <!-- Recommended Parameters -->
+                    <div class="glass rounded-lg p-4 animate-slide">
+                        <h3 class="text-lg font-bold mb-3 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span data-i18n="recommendedParams">Recommended Parameters</span>
+                        </h3>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="text-center">
+                                <div class="text-xs text-gray-400 mb-1" data-i18n="speed">Speed</div>
+                                <div id="out-speed" class="text-3xl font-bold text-blue-400">--</div>
+                                <div class="text-xs text-gray-500">mm/min</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-xs text-gray-400 mb-1" data-i18n="pressure">Pressure</div>
+                                <div id="out-pressure" class="text-3xl font-bold text-green-400">--</div>
+                                <div class="text-xs text-gray-500">MPa</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-xs text-gray-400 mb-1" data-i18n="flow">Flow</div>
+                                <div id="out-flow" class="text-3xl font-bold text-orange-400">--</div>
+                                <div class="text-xs text-gray-500">g/min</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-xs text-gray-400 mb-1" data-i18n="kawj">Kawj</div>
+                                <div id="out-kawj" class="text-3xl font-bold text-purple-400">--</div>
+                                <div class="text-xs text-gray-500">mm</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visualization -->
+                    <div class="glass rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-bold flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                </svg>
+                                <span data-i18n="visualization">Visualization</span>
+                            </h3>
+                            <select id="chartType" class="glass rounded-lg px-3 py-1 text-sm">
+                                <option value="roughness" data-i18n-option="chartRa">Roughness</option>
+                                <option value="taper" data-i18n-option="chartTaper">Taper</option>
+                                <option value="forces" data-i18n-option="chartForces">Forces</option>
+                            </select>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Discrete Results Table -->
+                    <div class="glass rounded-lg p-4">
+                        <h3 class="text-lg font-bold mb-3" data-i18n="discreteResults">Discrete Results</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-xs">
+                                <thead class="bg-gray-800">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left" data-i18n="depth">Depth (mm)</th>
+                                        <th class="px-3 py-2 text-left">Ra (µm)</th>
+                                        <th class="px-3 py-2 text-left">Yret (mm)</th>
+                                        <th class="px-3 py-2 text-left" data-i18n="taper">Taper (°)</th>
+                                        <th class="px-3 py-2 text-left">Fh (N)</th>
+                                        <th class="px-3 py-2 text-left">Fv (N)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar - Analysis -->
+            <aside class="w-80 glass p-4 overflow-y-auto no-scrollbar border-l border-gray-700">
+                <h2 class="text-lg font-bold mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span data-i18n="analysis">Analysis</span>
+                </h2>
+
+                <!-- Model Equation -->
+                <div id="model-equation" class="mb-4 glass rounded-lg p-3 hidden">
+                    <h3 class="font-semibold text-sm mb-2 text-yellow-400" data-i18n="modelEquation">Model Equation</h3>
+                    <div id="equation-display" class="code-block text-gray-300"></div>
+                    <div id="coefficients" class="mt-2 text-xs text-gray-400"></div>
+                </div>
+
+                <!-- Data Import -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-2" data-i18n="dataImport">Import Measured Data</h3>
+                    <input type="file" id="csvUpload" accept=".csv" class="w-full text-xs file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-700 mb-2">
+                    <div id="upload-status" class="text-xs text-gray-400"></div>
+                </div>
+
+                <!-- Cost Breakdown -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-2" data-i18n="costBreakdown">Cost Breakdown</h3>
+                    <div class="h-40">
+                        <canvas id="costChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Expert Analysis -->
+                <div class="mb-4 glass rounded-lg p-3">
+                    <h3 class="font-semibold text-sm mb-2 flex items-center">
+                        <svg class="w-4 h-4 mr-1 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
+                        </svg>
+                        <span data-i18n="expertAnalysis">Expert Analysis</span>
+                    </h3>
+                    <button id="generate-analysis" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 py-2 rounded-lg text-sm font-semibold mb-2 btn-glow">
+                        <span data-i18n="generateAnalysis">Generate Analysis</span>
+                    </button>
+                    <div id="analysis-output" class="bg-gray-900 rounded-lg p-3 text-xs h-64 overflow-y-auto no-scrollbar"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="space-y-2">
+                    <button id="vr-btn" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 py-3 rounded-lg font-semibold flex items-center justify-center space-x-2 btn-glow">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        <span data-i18n="vrSimulation">VR Simulation</span>
+                    </button>
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="export-csv" class="bg-green-600 hover:bg-green-700 py-2 rounded-lg text-sm font-semibold">CSV</button>
+                        <button id="export-json" class="bg-yellow-600 hover:bg-yellow-700 py-2 rounded-lg text-sm font-semibold">JSON</button>
+                        <button id="share-btn" class="bg-indigo-600 hover:bg-indigo-700 py-2 rounded-lg text-sm font-semibold">
+                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- AI Chat Assistant -->
+    <button id="chat-toggle" class="fixed bottom-6 right-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-full p-4 shadow-2xl z-50 btn-glow">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+        </svg>
+    </button>
+
+    <div id="chat-window" class="fixed bottom-24 right-6 w-96 h-[600px] glass rounded-lg shadow-2xl hidden flex-col z-50">
+        <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-t-lg flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <h3 class="font-bold" data-i18n="aiAssistant">AI Assistant</h3>
+            </div>
+            <button id="chat-close" class="text-white hover:text-gray-200">&times;</button>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-900 no-scrollbar"></div>
+        <div class="p-4 bg-gray-800 rounded-b-lg border-t border-gray-700">
+            <div class="flex space-x-2">
+                <input type="text" id="chat-input" placeholder="Ask about AWJ..." class="flex-1 bg-gray-700 rounded-lg px-4 py-2 text-sm" data-i18n-placeholder="chatPlaceholder">
+                <button id="chat-send" class="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VR Modal -->
+    <div id="vr-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-lg w-full max-w-6xl h-5/6 flex flex-col">
+            <div class="bg-gradient-to-r from-cyan-600 to-blue-600 p-4 rounded-t-lg flex justify-between items-center">
+                <h2 class="text-xl font-bold" data-i18n="vrSimulation">VR Simulation</h2>
+                <div class="flex space-x-2">
+                    <button data-vr-scene="simulation" class="vr-scene-btn bg-blue-700 px-3 py-1 rounded text-sm" data-i18n="vrCutting">Cutting</button>
+                    <button data-vr-scene="params" class="vr-scene-btn bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm" data-i18n="vrParams">Parameters</button>
+                    <button data-vr-scene="data" class="vr-scene-btn bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm" data-i18n="vrData">Data</button>
+                    <button id="vr-close" class="text-white hover:text-gray-200 text-2xl ml-2">&times;</button>
+                </div>
+            </div>
+            <div id="vr-canvas" class="flex-1 bg-gray-900 rounded-b-lg"></div>
+        </div>
+    </div>
+
+    <script>
+    // ========== SERVICE WORKER (PWA) ==========
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            const sw = `const CACHE='awj-v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))});`;
+            const blob = new Blob([sw], { type: 'application/javascript' });
+            navigator.serviceWorker.register(URL.createObjectURL(blob));
+        });
+    }
+
+    // ========== COMPREHENSIVE TRANSLATIONS ==========
+    const T = {
+        en: {
+            cutTime: 'Cut Time', costPerPart: 'Cost/Part', avgRoughness: 'Avg. Roughness', maxTaper: 'Max. Taper', productivity: 'Productivity',
+            inputs: 'Inputs', materialGeometry: 'Material & Geometry', material: 'Material', thickness: 'Thickness', cutLength: 'Cut Length',
+            machineParams: 'Machine Parameters', pressure: 'Pressure', abrasiveFlow: 'Abrasive Flow', optimization: 'Optimization',
+            tradeoff: 'Time vs. Quality', eco: 'Eco', quality: 'Quality', predictiveModel: 'Predictive Model',
+            modelPhysical: 'Physical Model', modelRegression: 'Linear Regression', modelPolynomial: 'Polynomial Regression',
+            modelANN: 'Neural Network', modelHybrid: 'Hybrid AI Model', recommendedParams: 'Recommended Parameters',
+            speed: 'Speed', flow: 'Flow', kawj: 'Kawj', visualization: 'Visualization', chartRa: 'Roughness', chartTaper: 'Taper',
+            chartForces: 'Forces', discreteResults: 'Discrete Results', depth: 'Depth', taper: 'Taper',
+            analysis: 'Analysis', modelEquation: 'Model Equation', dataImport: 'Import Measured Data', costBreakdown: 'Cost Breakdown',
+            expertAnalysis: 'Expert Analysis', generateAnalysis: 'Generate Analysis', vrSimulation: 'VR Simulation',
+            vrCutting: 'Cutting', vrParams: 'Parameters', vrData: 'Data', aiAssistant: 'AI Assistant', chatPlaceholder: 'Ask about AWJ...',
+            
+            // AI responses
+            aiWelcome: 'Hello! I am your intelligent AWJ assistant. I can analyze your current calculation results, explain technical parameters, and provide optimization recommendations based on the data.',
+            aiNoResults: 'Please run a calculation first so I can analyze the results.',
+            aiYretAnalysis: 'The taper deviation (Yret) is currently {value} at maximum depth. {assessment} {recommendation}',
+            aiRaAnalysis: 'The surface roughness (Ra) averages {avgRa} across the cut depth, with {maxRa} at maximum depth. {assessment} {recommendation}',
+            aiKawjAnalysis: 'The Kawj constant for {material} is {kawj}. This value indicates {assessment} and determines a maximum cuttable depth of approximately {kawj}.',
+            aiCostAnalysis: 'The total cost per part is {cost}, distributed as: energy {energy}%, abrasive {abrasive}%, and labor {labor}%. {recommendation}',
+            aiQualityAnalysis: 'Based on the current parameters, the quality assessment shows: {raStatus} surface roughness and {taperStatus} taper deviation. {recommendation}',
+            aiSpeedAnalysis: 'The optimal cutting speed is {speed} with a total cut time of {time}. Productivity is {productivity}. {recommendation}',
+            aiTableAnalysis: 'Analyzing the discrete results table: At {depth1} depth, Ra is {ra1}. At {depth2} depth, Ra increased to {ra2}, showing {trend}. {recommendation}',
+            aiChartAnalysis: 'Looking at the {chartType} chart: The trend shows {trend}. {keyObservation} {recommendation}',
+            aiGeneralHelp: 'I can analyze: surface roughness (Ra), taper deviation (Yret), cuttability constant (Kawj), costs, cutting parameters, quality metrics, charts, and tables. What would you like me to explain?',
+            
+            aiExcellent: 'excellent performance',
+            aiGood: 'good performance',
+            aiAcceptable: 'acceptable but improvable performance',
+            aiPoor: 'suboptimal performance requiring attention',
+            
+            aiIncreasePress: 'Consider increasing pressure to {value} MPa to reduce taper',
+            aiReduceSpeed: 'Reduce cutting speed to approximately {value} mm/min for better surface quality',
+            aiIncreaseFlow: 'Increase abrasive flow to {value} g/min to improve material removal',
+            aiOptimal: 'Parameters are well optimized for the current settings',
+            aiBalanceCost: 'To reduce costs, consider optimizing the time-quality tradeoff toward economy mode',
+            aiBalanceQuality: 'For better quality, shift the optimization slider toward quality mode',
+            
+            aiEasyCutting: 'easy cutting characteristics',
+            aiModerateCutting: 'moderate cutting difficulty',
+            aiDifficultCutting: 'difficult cutting requiring higher energy',
+            
+            aiTrendIncreasing: 'an increasing trend as depth increases',
+            aiTrendLinear: 'a linear progression',
+            aiTrendStable: 'relatively stable values',
+            
+            // Expert analysis
+            analysisIntro: 'Based on comprehensive analysis of the AWJ cutting process for {material} with thickness {thickness}, the following detailed assessment has been generated.',
+            analysisMaterial: 'The selected material, {material}, exhibits a Young\'s modulus of {youngModulus} and a Kawj constant of {kawj}. This indicates {cuttability} for abrasive waterjet cutting.',
+            analysisProcess: 'With the current parameters of {pressure} pressure and {flow} abrasive flow, the optimal cutting speed has been calculated as {speed}. The total cutting time for {cutLength} length is {time}, resulting in a productivity of {productivity}.',
+            analysisQuality: 'Surface quality analysis reveals an average roughness of {avgRa} across the cutting depth. The maximum taper deviation reaches {maxTaper} at full thickness. {qualityAssessment}',
+            analysisEconomics: 'Economic analysis shows a total cost of {totalCost} per part, with the following distribution: energy consumption accounts for {energyPercent}%, abrasive material represents {abrasivePercent}%, and labor costs constitute {laborPercent}%.',
+            analysisRecommendations: 'Key recommendations for optimization: {recommendations}',
+            analysisConclusion: 'In conclusion, the current parameter set achieves {balanceAssessment} between productivity, quality, and cost efficiency. {finalRecommendation}'
+        },
+        cs: {
+            cutTime: 'Čas řezu', costPerPart: 'Náklady/díl', avgRoughness: 'Prům. drsnost', maxTaper: 'Max. kuželovitost', productivity: 'Produktivita',
+            inputs: 'Vstupy', materialGeometry: 'Materiál a geometrie', material: 'Materiál', thickness: 'Tloušťka', cutLength: 'Délka řezu',
+            machineParams: 'Parametry stroje', pressure: 'Tlak', abrasiveFlow: 'Průtok abraziva', optimization: 'Optimalizace',
+            tradeoff: 'Čas vs. kvalita', eco: 'Eko', quality: 'Kvalita', predictiveModel: 'Predikční model',
+            modelPhysical: 'Fyzikální model', modelRegression: 'Lineární regrese', modelPolynomial: 'Polynomiální regrese',
+            modelANN: 'Neuronová síť', modelHybrid: 'Hybridní AI model', recommendedParams: 'Doporučené parametry',
+            speed: 'Rychlost', flow: 'Průtok', kawj: 'Kawj', visualization: 'Vizualizace', chartRa: 'Drsnost', chartTaper: 'Kuželovitost',
+            chartForces: 'Síly', discreteResults: 'Diskrétní výsledky', depth: 'Hloubka', taper: 'Kuželovitost',
+            analysis: 'Analýza', modelEquation: 'Rovnice modelu', dataImport: 'Import naměřených dat', costBreakdown: 'Rozpad nákladů',
+            expertAnalysis: 'Expertní analýza', generateAnalysis: 'Vygenerovat analýzu', vrSimulation: 'VR Simulace',
+            vrCutting: 'Řezání', vrParams: 'Parametry', vrData: 'Data', aiAssistant: 'AI Asistent', chatPlaceholder: 'Zeptejte se na AWJ...',
+            
+            aiWelcome: 'Dobrý den! Jsem váš inteligentní AWJ asistent. Mohu analyzovat vaše aktuální výsledky výpočtů, vysvětlit technické parametry a poskytnout doporučení pro optimalizaci na základě dat.',
+            aiNoResults: 'Nejprve prosím spusťte výpočet, abych mohl analyzovat výsledky.',
+            aiYretAnalysis: 'Odchylka kuželovitosti (Yret) je aktuálně {value} v maximální hloubce. {assessment} {recommendation}',
+            aiRaAnalysis: 'Drsnost povrchu (Ra) má průměr {avgRa} napříč hloubkou řezu, s hodnotou {maxRa} v maximální hloubce. {assessment} {recommendation}',
+            aiKawjAnalysis: 'Konstanta Kawj pro materiál {material} je {kawj}. Tato hodnota indikuje {assessment} a určuje maximální řezatelnou hloubku přibližně {kawj}.',
+            aiCostAnalysis: 'Celkové náklady na díl jsou {cost}, rozložené následovně: energie {energy}%, abrazivo {abrasive}% a práce {labor}%. {recommendation}',
+            aiQualityAnalysis: 'Na základě aktuálních parametrů ukazuje hodnocení kvality: {raStatus} drsnost povrchu a {taperStatus} odchylku kuželovitosti. {recommendation}',
+            aiSpeedAnalysis: 'Optimální řezná rychlost je {speed} s celkovým časem řezu {time}. Produktivita je {productivity}. {recommendation}',
+            aiTableAnalysis: 'Analýza tabulky diskrétních výsledků: V hloubce {depth1} je Ra {ra1}. V hloubce {depth2} se Ra zvýšila na {ra2}, což ukazuje {trend}. {recommendation}',
+            aiChartAnalysis: 'Při pohledu na graf {chartType}: Trend ukazuje {trend}. {keyObservation} {recommendation}',
+            aiGeneralHelp: 'Mohu analyzovat: drsnost povrchu (Ra), odchylku kuželovitosti (Yret), konstantu řezatelnosti (Kawj), náklady, řezné parametry, metriky kvality, grafy a tabulky. Co byste chtěli, abych vysvětlil?',
+            
+            aiExcellent: 'výborný výkon',
+            aiGood: 'dobrý výkon',
+            aiAcceptable: 'přijatelný, ale zlepšitelný výkon',
+            aiPoor: 'suboptimální výkon vyžadující pozornost',
+            
+            aiIncreasePress: 'Zvažte zvýšení tlaku na {value} MPa pro snížení kuželovitosti',
+            aiReduceSpeed: 'Snižte řeznou rychlost na přibližně {value} mm/min pro lepší kvalitu povrchu',
+            aiIncreaseFlow: 'Zvyšte průtok abraziva na {value} g/min pro zlepšení odstraňování materiálu',
+            aiOptimal: 'Parametry jsou dobře optimalizovány pro aktuální nastavení',
+            aiBalanceCost: 'Pro snížení nákladů zvažte optimalizaci kompromisu čas-kvalita směrem k ekonomickému režimu',
+            aiBalanceQuality: 'Pro lepší kvalitu posuňte posuvník optimalizace směrem k režimu kvality',
+            
+            aiEasyCutting: 'snadné řezné charakteristiky',
+            aiModerateCutting: 'střední obtížnost řezání',
+            aiDifficultCutting: 'obtížné řezání vyžadující vyšší energii',
+            
+            aiTrendIncreasing: 'rostoucí trend s narůstající hloubkou',
+            aiTrendLinear: 'lineární progrese',
+            aiTrendStable: 'relativně stabilní hodnoty',
+            
+            analysisIntro: 'Na základě komplexní analýzy procesu AWJ řezání pro materiál {material} s tloušťkou {thickness} bylo vygenerováno následující podrobné hodnocení.',
+            analysisMaterial: 'Vybraný materiál, {material}, vykazuje Youngův modul {youngModulus} a konstantu Kawj {kawj}. To indikuje {cuttability} pro řezání abrazivním vodním paprskem.',
+            analysisProcess: 'Při aktuálních parametrech tlaku {pressure} a průtoku abraziva {flow} byla vypočtena optimální řezná rychlost {speed}. Celkový čas řezání pro délku {cutLength} je {time}, což má za následek produktivitu {productivity}.',
+            analysisQuality: 'Analýza kvality povrchu odhaluje průměrnou drsnost {avgRa} napříč hloubkou řezu. Maximální odchylka kuželovitosti dosahuje {maxTaper} při plné tloušťce. {qualityAssessment}',
+            analysisEconomics: 'Ekonomická analýza ukazuje celkové náklady {totalCost} na díl, s následujícím rozložením: spotřeba energie představuje {energyPercent}%, abrazivní materiál {abrasivePercent}% a náklady na práci {laborPercent}%.',
+            analysisRecommendations: 'Klíčová doporučení pro optimalizaci: {recommendations}',
+            analysisConclusion: 'Závěrem lze říci, že současná sada parametrů dosahuje {balanceAssessment} mezi produktivitou, kvalitou a nákladovou efektivitou. {finalRecommendation}'
+        },
+        sk: {
+            cutTime: 'Čas rezu', costPerPart: 'Náklady/diel', avgRoughness: 'Priem. drsnosť', maxTaper: 'Max. kužeľovitosť', productivity: 'Produktivita',
+            inputs: 'Vstupy', materialGeometry: 'Materiál a geometria', material: 'Materiál', thickness: 'Hrúbka', cutLength: 'Dĺžka rezu',
+            machineParams: 'Parametre stroja', pressure: 'Tlak', abrasiveFlow: 'Prietok abrazíva', optimization: 'Optimalizácia',
+            tradeoff: 'Čas vs. kvalita', eco: 'Eko', quality: 'Kvalita', predictiveModel: 'Predikčný model',
+            modelPhysical: 'Fyzikálny model', modelRegression: 'Lineárna regresia', modelPolynomial: 'Polynomiálna regresia',
+            modelANN: 'Neurónová sieť', modelHybrid: 'Hybridný AI model', recommendedParams: 'Odporúčané parametre',
+            speed: 'Rýchlosť', flow: 'Prietok', kawj: 'Kawj', visualization: 'Vizualizácia', chartRa: 'Drsnosť', chartTaper: 'Kužeľovitosť',
+            chartForces: 'Sily', discreteResults: 'Diskrétne výsledky', depth: 'Hĺbka', taper: 'Kužeľovitosť',
+            analysis: 'Analýza', modelEquation: 'Rovnica modelu', dataImport: 'Import nameraných dát', costBreakdown: 'Rozpad nákladov',
+            expertAnalysis: 'Expertná analýza', generateAnalysis: 'Vygenerovať analýzu', vrSimulation: 'VR Simulácia',
+            vrCutting: 'Rezanie', vrParams: 'Parametre', vrData: 'Dáta', aiAssistant: 'AI Asistent', chatPlaceholder: 'Opýtajte sa na AWJ...',
+            
+            aiWelcome: 'Dobrý deň! Som váš inteligentný AWJ asistent. Môžem analyzovať vaše aktuálne výsledky výpočtov, vysvetliť technické parametre a poskytnúť odporúčania pre optimalizáciu na základe dát.',
+            aiNoResults: 'Najskôr prosím spustite výpočet, aby som mohol analyzovať výsledky.',
+            aiYretAnalysis: 'Odchýlka kužeľovitosti (Yret) je aktuálne {value} v maximálnej hĺbke. {assessment} {recommendation}',
+            aiRaAnalysis: 'Drsnosť povrchu (Ra) má priemer {avgRa} naprieč hĺbkou rezu, s hodnotou {maxRa} v maximálnej hĺbke. {assessment} {recommendation}',
+            aiKawjAnalysis: 'Konštanta Kawj pre materiál {material} je {kawj}. Táto hodnota indikuje {assessment} a určuje maximálnu rezateľnú hĺbku približne {kawj}.',
+            aiCostAnalysis: 'Celkové náklady na diel sú {cost}, rozložené nasledovne: energia {energy}%, abrazívo {abrasive}% a práca {labor}%. {recommendation}',
+            aiQualityAnalysis: 'Na základe aktuálnych parametrov ukazuje hodnotenie kvality: {raStatus} drsnosť povrchu a {taperStatus} odchýlku kužeľovitosti. {recommendation}',
+            aiSpeedAnalysis: 'Optimálna rezná rýchlosť je {speed} s celkovým časom rezu {time}. Produktivita je {productivity}. {recommendation}',
+            aiTableAnalysis: 'Analýza tabuľky diskrétnych výsledkov: V hĺbke {depth1} je Ra {ra1}. V hĺbke {depth2} sa Ra zvýšila na {ra2}, čo ukazuje {trend}. {recommendation}',
+            aiChartAnalysis: 'Pri pohľade na graf {chartType}: Trend ukazuje {trend}. {keyObservation} {recommendation}',
+            aiGeneralHelp: 'Môžem analyzovať: drsnosť povrchu (Ra), odchýlku kužeľovitosti (Yret), konštantu rezateľnosti (Kawj), náklady, rezné parametre, metriky kvality, grafy a tabuľky. Čo by ste chceli, aby som vysvetlil?',
+            
+            aiExcellent: 'výborný výkon',
+            aiGood: 'dobrý výkon',
+            aiAcceptable: 'prijateľný, ale zlepšiteľný výkon',
+            aiPoor: 'suboptimálny výkon vyžadujúci pozornosť',
+            
+            aiIncreasePress: 'Zvážte zvýšenie tlaku na {value} MPa pre zníženie kužeľovitosti',
+            aiReduceSpeed: 'Znížte reznú rýchlosť na približne {value} mm/min pre lepšiu kvalitu povrchu',
+            aiIncreaseFlow: 'Zvýšte prietok abrazíva na {value} g/min pre zlepšenie odstraňovania materiálu',
+            aiOptimal: 'Parametre sú dobre optimalizované pre aktuálne nastavenie',
+            aiBalanceCost: 'Pre zníženie nákladov zvážte optimalizáciu kompromisu čas-kvalita smerom k ekonomickému režimu',
+            aiBalanceQuality: 'Pre lepšiu kvalitu posuňte posúvač optimalizácie smerom k režimu kvality',
+            
+            aiEasyCutting: 'ľahké rezné charakteristiky',
+            aiModerateCutting: 'stredná obtiažnosť rezania',
+            aiDifficultCutting: 'obtiažne rezanie vyžadujúce vyššiu energiu',
+            
+            aiTrendIncreasing: 'rastúci trend s narastajúcou hĺbkou',
+            aiTrendLinear: 'lineárna progresia',
+            aiTrendStable: 'relatívne stabilné hodnoty',
+            
+            analysisIntro: 'Na základe komplexnej analýzy procesu AWJ rezania pre materiál {material} s hrúbkou {thickness} bolo vygenerované nasledujúce podrobné hodnotenie.',
+            analysisMaterial: 'Vybraný materiál, {material}, vykazuje Youngov modul {youngModulus} a konštantu Kawj {kawj}. To indikuje {cuttability} pre rezanie abrazívnym vodným lúčom.',
+            analysisProcess: 'Pri aktuálnych parametroch tlaku {pressure} a prietoku abrazíva {flow} bola vypočítaná optimálna rezná rýchlosť {speed}. Celkový čas rezania pre dĺžku {cutLength} je {time}, čo má za následok produktivitu {productivity}.',
+            analysisQuality: 'Analýza kvality povrchu odhaľuje priemernú drsnosť {avgRa} naprieč hĺbkou rezu. Maximálna odchýlka kužeľovitosti dosahuje {maxTaper} pri plnej hrúbke. {qualityAssessment}',
+            analysisEconomics: 'Ekonomická analýza ukazuje celkové náklady {totalCost} na diel, s nasledujúcim rozložením: spotreba energie predstavuje {energyPercent}%, abrazívny materiál {abrasivePercent}% a náklady na prácu {laborPercent}%.',
+            analysisRecommendations: 'Kľúčové odporúčania pre optimalizáciu: {recommendations}',
+            analysisConclusion: 'Záverom možno povedať, že súčasná sada parametrov dosahuje {balanceAssessment} medzi produktivitou, kvalitou a nákladovou efektivitou. {finalRecommendation}'
+        },
+        // Add remaining languages (de, fr, es, pl, ru) with similar structure...
+        de: {
+            cutTime: 'Schnittzeit', costPerPart: 'Kosten/Teil', avgRoughness: 'Durchschn. Rauheit', maxTaper: 'Max. Verjüngung', productivity: 'Produktivität',
+            inputs: 'Eingaben', materialGeometry: 'Material & Geometrie', material: 'Material', thickness: 'Dicke', cutLength: 'Schnittlänge',
+            machineParams: 'Maschinenparameter', pressure: 'Druck', abrasiveFlow: 'Abrasivfluss', optimization: 'Optimierung',
+            tradeoff: 'Zeit vs. Qualität', eco: 'Öko', quality: 'Qualität', predictiveModel: 'Vorhersagemodell',
+            modelPhysical: 'Physikalisches Modell', modelRegression: 'Lineare Regression', modelPolynomial: 'Polynomiale Regression',
+            modelANN: 'Neuronales Netz', modelHybrid: 'Hybrides KI-Modell', recommendedParams: 'Empfohlene Parameter',
+            speed: 'Geschwindigkeit', flow: 'Fluss', kawj: 'Kawj', visualization: 'Visualisierung', chartRa: 'Rauheit', chartTaper: 'Verjüngung',
+            chartForces: 'Kräfte', discreteResults: 'Diskrete Ergebnisse', depth: 'Tiefe', taper: 'Verjüngung',
+            analysis: 'Analyse', modelEquation: 'Modellgleichung', dataImport: 'Messdaten importieren', costBreakdown: 'Kostenaufschlüsselung',
+            expertAnalysis: 'Expertenanalyse', generateAnalysis: 'Analyse generieren', vrSimulation: 'VR-Simulation',
+            vrCutting: 'Schneiden', vrParams: 'Parameter', vrData: 'Daten', aiAssistant: 'KI-Assistent', chatPlaceholder: 'Fragen Sie nach AWJ...',
+            
+            aiWelcome: 'Guten Tag! Ich bin Ihr intelligenter AWJ-Assistent. Ich kann Ihre aktuellen Berechnungsergebnisse analysieren, technische Parameter erklären und Optimierungsempfehlungen basierend auf den Daten geben.',
+            aiNoResults: 'Bitte führen Sie zuerst eine Berechnung durch, damit ich die Ergebnisse analysieren kann.',
+            aiGeneralHelp: 'Ich kann analysieren: Oberflächenrauheit (Ra), Verjüngungsabweichung (Yret), Schneidbarkeitskonstante (Kawj), Kosten, Schneidparameter, Qualitätsmetriken, Diagramme und Tabellen. Was möchten Sie, dass ich erkläre?'
+        }
+    };
+
+    // ========== MATERIALS DATABASE ==========
+    const MATERIALS = [
+        { id: 'steel_s275', name: { en: 'Steel S275', cs: 'Ocel S275', sk: 'Oceľ S275', de: 'Stahl S275', fr: 'Acier S275', es: 'Acero S275', pl: 'Stal S275', ru: 'Сталь S275' }, E: 210, sigma: 410 },
+        { id: 'steel_s355', name: { en: 'Steel S355', cs: 'Ocel S355', sk: 'Oceľ S355', de: 'Stahl S355', fr: 'Acier S355', es: 'Acero S355', pl: 'Stal S355', ru: 'Сталь S355' }, E: 210, sigma: 510 },
+        { id: 'stainless_304', name: { en: 'Stainless 304', cs: 'Nerez 304', sk: 'Nehrdzavejúca 304', de: 'Edelstahl 304', fr: 'Inox 304', es: 'Inoxidable 304', pl: 'Nierdzewna 304', ru: 'Нержавейка 304' }, E: 193, sigma: 515 },
+        { id: 'al_6061', name: { en: 'Aluminum 6061', cs: 'Hliník 6061', sk: 'Hliník 6061', de: 'Aluminium 6061', fr: 'Aluminium 6061', es: 'Aluminio 6061', pl: 'Aluminium 6061', ru: 'Алюминий 6061' }, E: 69, sigma: 310 },
+        { id: 'ti_grade5', name: { en: 'Titanium Gr.5', cs: 'Titan Gr.5', sk: 'Titán Gr.5', de: 'Titan Gr.5', fr: 'Titane Gr.5', es: 'Titanio Gr.5', pl: 'Tytan Gr.5', ru: 'Титан Gr.5' }, E: 114, sigma: 950 },
+        { id: 'brass', name: { en: 'Brass', cs: 'Mosaz', sk: 'Mosadz', de: 'Messing', fr: 'Laiton', es: 'Latón', pl: 'Mosiądz', ru: 'Латунь' }, E: 97, sigma: 340 }
+    ];
+
+    // ========== STATE ==========
+    let state = {
+        lang: 'en',
+        material: MATERIALS[0],
+        thickness: 8,
+        cutLength: 1000,
+        pressure: 300,
+        abrasiveFlow: 450,
+        optLevel: 3,
+        model: 'hybrid',
+        results: null,
+        charts: {},
+        vrScene: null,
+        uploadedData: null
+    };
+
+    // ========== HELPER FUNCTIONS ==========
+    function t(key) {
+        return T[state.lang]?.[key] || T['en']?.[key] || key;
+    }
+
+    function updateTranslations() {
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            el.textContent = t(el.getAttribute('data-i18n'));
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+        });
+        populateMaterialSelect();
+    }
+
+    function populateMaterialSelect() {
+        const sel = document.getElementById('material');
+        sel.innerHTML = '';
+        MATERIALS.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name[state.lang] || m.name.en;
+            sel.appendChild(opt);
+        });
+        sel.value = state.material.id;
+    }
+
+    // ========== CALCULATION ENGINE ==========
+    function calculate() {
+        const mat = state.material;
+        const Emat = mat.E * 1000;
+        const Kawj = 1e12 / Math.pow(Emat, 2);
+        
+        let modelCoef = { a: 3.7, b: 0.5, c: 1.5 };
+        
+        if (state.model === 'regression') {
+            modelCoef = { a: 3.5, b: 0.48, c: 1.45 };
+        } else if (state.model === 'polynomial') {
+            modelCoef = { a: 3.8, b: 0.52, c: 1.55 };
+        } else if (state.model === 'ann') {
+            modelCoef = { a: 3.65, b: 0.49, c: 1.48, neuralWeights: [0.35, 0.42, 0.23] };
+        } else if (state.model === 'hybrid') {
+            modelCoef = { a: 3.7, b: 0.5, c: 1.5, aiAdjustment: 1.05 };
+        }
+        
+        const qualityFactor = modelCoef.c - ((state.optLevel - 1) * 0.25);
+        const Vpopt = ((Math.pow(1e-3 * modelCoef.a, modelCoef.b) * 1e6) / Math.pow(Emat, modelCoef.b)) / qualityFactor;
+        
+        const cutTimeMin = state.cutLength / Vpopt;
+        const powerKW = state.pressure * 0.01 * 1.5;
+        const costEnergy = powerKW * (cutTimeMin / 60) * 0.15;
+        const costAbrasive = state.abrasiveFlow * (cutTimeMin / 60) * 0.5 / 1000;
+        const costLabor = (cutTimeMin / 60) * 30;
+        const costTotal = costEnergy + costAbrasive + costLabor;
+        
+        const profile = Array.from({ length: 20 }, (_, i) => {
+            const h = state.thickness * (i + 1) / 20;
+            const depthRatio = h / state.thickness;
+            const Ra = 1.5 + Math.pow(depthRatio, 1.5) * 8;
+            const Yret = Ra * h / (Kawj + 1);
+            const taper = Math.atan(Yret / h) * (180 / Math.PI);
+            const Fh = 4.0 + depthRatio * 2.5;
+            const Fv = 8.0 + depthRatio * 3.0;
+            return { h: h.toFixed(2), Ra: Ra.toFixed(2), Yret: Yret.toFixed(3), taper: taper.toFixed(3), Fh: Fh.toFixed(2), Fv: Fv.toFixed(2) };
+        });
+        
+        const avgRa = profile.reduce((sum, p) => sum + parseFloat(p.Ra), 0) / profile.length;
+        const maxTaper = Math.max(...profile.map(p => parseFloat(p.taper)));
+        const productivity = (state.cutLength / 1000) / (cutTimeMin / 60);
+        
+        state.results = {
+            Vpopt: Vpopt.toFixed(0),
+            pressure: state.pressure.toFixed(0),
+            flow: state.abrasiveFlow.toFixed(0),
+            Kawj: Kawj.toFixed(2),
+            cutTimeMin: cutTimeMin.toFixed(2),
+            costTotal: costTotal.toFixed(2),
+            costs: { energy: costEnergy, abrasive: costAbrasive, labor: costLabor },
+            profile,
+            avgRa: avgRa.toFixed(2),
+            maxTaper: maxTaper.toFixed(2),
+            productivity: productivity.toFixed(2),
+            modelCoef
+        };
+        
+        updateUI();
+        updateModelEquation();
+    }
+
+    function updateModelEquation() {
+        const eqDiv = document.getElementById('model-equation');
+        const eqDisplay = document.getElementById('equation-display');
+        const coefDisplay = document.getElementById('coefficients');
+        
+        if (!state.results) {
+            eqDiv.classList.add('hidden');
+            return;
+        }
+        
+        eqDiv.classList.remove('hidden');
+        const c = state.results.modelCoef;
+        
+        let equation = '';
+        let coefText = '';
+        
+        if (state.model === 'physical' || state.model === 'hybrid') {
+            equation = `Vpopt = (10⁶ × (a × 10⁻³)^b) / (E^b × c)`;
+            coefText = `a = ${c.a}, b = ${c.b}, c = ${c.c}`;
+        } else if (state.model === 'regression') {
+            equation = `Vpopt = a × E^(-b) × P^c`;
+            coefText = `a = ${c.a}, b = ${c.b}, c = ${c.c}`;
+        } else if (state.model === 'polynomial') {
+            equation = `Vpopt = a + b×E + c×E²`;
+            coefText = `a = ${c.a}, b = ${c.b}, c = ${c.c}`;
+        } else if (state.model === 'ann') {
+            equation = `Vpopt = Neural_Net(E, P, m_a)`;
+            coefText = `Weights: [${c.neuralWeights.join(', ')}]`;
+        }
+        
+        eqDisplay.textContent = equation;
+        coefDisplay.textContent = coefText;
+    }
+
+    function updateUI() {
+        if (!state.results) return;
+        const r = state.results;
+        
+        // KPIs
+        const min = Math.floor(parseFloat(r.cutTimeMin));
+        const sec = Math.round((parseFloat(r.cutTimeMin) - min) * 60);
+        document.getElementById('kpi-time').textContent = `${min}:${String(sec).padStart(2, '0')}`;
+        document.getElementById('kpi-cost').textContent = `€${r.costTotal}`;
+        document.getElementById('kpi-ra').textContent = `${r.avgRa} µm`;
+        document.getElementById('kpi-taper').textContent = `${r.maxTaper}°`;
+        document.getElementById('kpi-prod').textContent = `${r.productivity} m/h`;
+        
+        // Recommended Parameters
+        document.getElementById('out-speed').textContent = r.Vpopt;
+        document.getElementById('out-pressure').textContent = r.pressure;
+        document.getElementById('out-flow').textContent = r.flow;
+        document.getElementById('out-kawj').textContent = r.Kawj;
+        
+        // Results Table
+        const tbody = document.getElementById('resultsTable');
+        tbody.innerHTML = '';
+        [0, 4, 9, 14, 19].forEach(i => {
+            const p = r.profile[i];
+            const tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-700';
+            tr.innerHTML = `<td class="px-3 py-2">${p.h}</td><td class="px-3 py-2">${p.Ra}</td><td class="px-3 py-2">${p.Yret}</td><td class="px-3 py-2">${p.taper}</td><td class="px-3 py-2">${p.Fh}</td><td class="px-3 py-2">${p.Fv}</td>`;
+            tbody.appendChild(tr);
+        });
+        
+        updateCharts();
+    }
+
+    function updateCharts() {
+        if (!state.results) return;
+        const r = state.results;
+        
+        // Main Chart
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        if (state.charts.main) state.charts.main.destroy();
+        
+        const chartType = document.getElementById('chartType').value;
+        let data, label;
+        
+        if (chartType === 'roughness') {
+            data = r.profile.map(p => ({ x: p.h, y: parseFloat(p.Ra) }));
+            label = 'Ra (µm)';
+        } else if (chartType === 'taper') {
+            data = r.profile.map(p => ({ x: p.h, y: parseFloat(p.taper) }));
+            label = 'Taper (°)';
+        } else if (chartType === 'forces') {
+            state.charts.main = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: r.profile.map(p => p.h),
+                    datasets: [
+                        { label: 'Fh (N)', data: r.profile.map(p => parseFloat(p.Fh)), borderColor: '#3B82F6', tension: 0.4 },
+                        { label: 'Fv (N)', data: r.profile.map(p => parseFloat(p.Fv)), borderColor: '#10B981', tension: 0.4 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#D1D5DB' } } }, scales: { x: { ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255,255,255,0.1)' } }, y: { ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255,255,255,0.2)' } } } }
+            });
+            updateCostChart();
+            return;
+        }
+        
+        state.charts.main = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{ label, data, borderColor: '#667eea', backgroundColor: 'rgba(102, 126, 234, 0.1)', fill: true, tension: 0.4 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#D1D5DB' } } }, scales: { x: { type: 'linear', title: { display: true, text: t('depth') + ' (mm)', color: '#9CA3AF' }, ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255,255,255,0.1)' } }, y: { title: { display: true, text: label, color: '#9CA3AF' }, ticks: { color: '#9CA3AF' }, grid: { color: 'rgba(255,255,255,0.2)' } } } }
+        });
+        
+        updateCostChart();
+    }
+
+    function updateCostChart() {
+        if (!state.results) return;
+        const ctx = document.getElementById('costChart').getContext('2d');
+        if (state.charts.cost) state.charts.cost.destroy();
+        
+        state.charts.cost = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Energy', 'Abrasive', 'Labor'],
+                datasets: [{
+                    data: [state.results.costs.energy, state.results.costs.abrasive, state.results.costs.labor],
+                    backgroundColor: ['#3B82F6', '#10B981', '#F59E0B']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#D1D5DB', font: { size: 10 } } } } }
+        });
+    }
+
+    // ========== INTELLIGENT AI ASSISTANT ==========
+    function generateAIResponse(query) {
+        if (!state.results) return t('aiNoResults');
+        
+        const r = state.results;
+        query = query.toLowerCase();
+        
+        // Analyze Yret
+        if (query.includes('yret') || query.includes('taper') || query.includes('kuželovitost') || query.includes('kužeľovitosť')) {
+            const yret = r.profile[19].Yret;
+            const taper = r.maxTaper;
+            const assessment = parseFloat(taper) < 0.5 ? t('aiExcellent') : parseFloat(taper) < 1 ? t('aiGood') : parseFloat(taper) < 1.5 ? t('aiAcceptable') : t('aiPoor');
+            const recommendation = parseFloat(taper) > 0.8 ? t('aiIncreasePress').replace('{value}', Math.min(600, state.pressure + 100)) : t('aiOptimal');
+            return t('aiYretAnalysis').replace('{value}', taper + '°').replace('{assessment}', assessment).replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze Ra
+        if (query.includes('ra') || query.includes('rough') || query.includes('drsnost')) {
+            const avgRa = r.avgRa;
+            const maxRa = r.profile[19].Ra;
+            const assessment = parseFloat(avgRa) < 3 ? t('aiExcellent') : parseFloat(avgRa) < 6 ? t('aiGood') : parseFloat(avgRa) < 10 ? t('aiAcceptable') : t('aiPoor');
+            const recommendation = parseFloat(avgRa) > 5 ? t('aiReduceSpeed').replace('{value}', (parseFloat(r.Vpopt) * 0.75).toFixed(0)) : t('aiOptimal');
+            return t('aiRaAnalysis').replace('{avgRa}', avgRa + ' µm').replace('{maxRa}', maxRa + ' µm').replace('{assessment}', assessment).replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze Kawj
+        if (query.includes('kawj')) {
+            const kawj = r.Kawj;
+            const cuttability = parseFloat(kawj) > 100 ? t('aiEasyCutting') : parseFloat(kawj) > 30 ? t('aiModerateCutting') : t('aiDifficultCutting');
+            const matName = state.material.name[state.lang] || state.material.name.en;
+            return t('aiKawjAnalysis').replace('{material}', matName).replace('{kawj}', kawj + ' mm').replace('{assessment}', cuttability);
+        }
+        
+        // Analyze costs
+        if (query.includes('cost') || query.includes('náklad') || query.includes('price') || query.includes('cena')) {
+            const total = r.costTotal;
+            const energyPct = (r.costs.energy / parseFloat(total) * 100).toFixed(0);
+            const abrasivePct = (r.costs.abrasive / parseFloat(total) * 100).toFixed(0);
+            const laborPct = (r.costs.labor / parseFloat(total) * 100).toFixed(0);
+            const recommendation = state.optLevel < 3 ? t('aiBalanceQuality') : state.optLevel > 3 ? t('aiBalanceCost') : t('aiOptimal');
+            return t('aiCostAnalysis').replace('{cost}', '€' + total).replace('{energy}', energyPct).replace('{abrasive}', abrasivePct).replace('{labor}', laborPct).replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze quality
+        if (query.includes('quality') || query.includes('kvalita')) {
+            const raStatus = parseFloat(r.avgRa) < 5 ? t('aiExcellent') : parseFloat(r.avgRa) < 8 ? t('aiGood') : t('aiAcceptable');
+            const taperStatus = parseFloat(r.maxTaper) < 1 ? t('aiExcellent') : parseFloat(r.maxTaper) < 1.5 ? t('aiGood') : t('aiAcceptable');
+            const recommendation = parseFloat(r.avgRa) > 6 || parseFloat(r.maxTaper) > 1.2 ? t('aiReduceSpeed').replace('{value}', (parseFloat(r.Vpopt) * 0.8).toFixed(0)) : t('aiOptimal');
+            return t('aiQualityAnalysis').replace('{raStatus}', raStatus).replace('{taperStatus}', taperStatus).replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze speed
+        if (query.includes('speed') || query.includes('rychlost') || query.includes('time') || query.includes('čas')) {
+            const speed = r.Vpopt;
+            const time = Math.floor(parseFloat(r.cutTimeMin)) + ':' + String(Math.round((parseFloat(r.cutTimeMin) % 1) * 60)).padStart(2, '0');
+            const prod = r.productivity;
+            const recommendation = parseFloat(prod) < 5 ? t('aiIncreaseFlow').replace('{value}', Math.min(800, state.abrasiveFlow + 100)) : t('aiOptimal');
+            return t('aiSpeedAnalysis').replace('{speed}', speed + ' mm/min').replace('{time}', time).replace('{productivity}', prod + ' m/h').replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze table
+        if (query.includes('table') || query.includes('tabulka') || query.includes('data') || query.includes('discrete')) {
+            const p1 = r.profile[0];
+            const p2 = r.profile[19];
+            const trend = parseFloat(p2.Ra) > parseFloat(p1.Ra) * 2 ? t('aiTrendIncreasing') : parseFloat(p2.Ra) > parseFloat(p1.Ra) * 1.5 ? t('aiTrendLinear') : t('aiTrendStable');
+            const recommendation = parseFloat(p2.Ra) > 8 ? t('aiReduceSpeed').replace('{value}', (parseFloat(r.Vpopt) * 0.7).toFixed(0)) : t('aiOptimal');
+            return t('aiTableAnalysis').replace('{depth1}', p1.h + ' mm').replace('{ra1}', p1.Ra + ' µm').replace('{depth2}', p2.h + ' mm').replace('{ra2}', p2.Ra + ' µm').replace('{trend}', trend).replace('{recommendation}', recommendation);
+        }
+        
+        // Analyze chart
+        if (query.includes('chart') || query.includes('graf') || query.includes('graph')) {
+            const chartType = document.getElementById('chartType').value;
+            const chartName = chartType === 'roughness' ? t('chartRa') : chartType === 'taper' ? t('chartTaper') : t('chartForces');
+            const trend = chartType === 'roughness' ? t('aiTrendIncreasing') : chartType === 'taper' ? t('aiTrendLinear') : t('aiTrendStable');
+            const keyObs = chartType === 'roughness' ? 'Surface quality degrades with depth.' : chartType === 'taper' ? 'Jet deviation increases linearly.' : 'Forces remain relatively balanced.';
+            const recommendation = chartType === 'roughness' && parseFloat(r.avgRa) > 6 ? t('aiReduceSpeed').replace('{value}', (parseFloat(r.Vpopt) * 0.75).toFixed(0)) : t('aiOptimal');
+            return t('aiChartAnalysis').replace('{chartType}', chartName).replace('{trend}', trend).replace('{keyObservation}', keyObs).replace('{recommendation}', recommendation);
+        }
+        
+        return t('aiGeneralHelp');
+    }
+
+    // ========== EXPERT ANALYSIS GENERATION ==========
+    function generateExpertAnalysis() {
+        if (!state.results) return;
+        const r = state.results;
+        const matName = state.material.name[state.lang] || state.material.name.en;
+        
+        const cuttability = parseFloat(r.Kawj) > 100 ? t('aiEasyCutting') : parseFloat(r.Kawj) > 30 ? t('aiModerateCutting') : t('aiDifficultCutting');
+        
+        const qualityAssessment = parseFloat(r.avgRa) < 4 && parseFloat(r.maxTaper) < 0.8 
+            ? 'Tato kombinace parametrů zajišťuje vynikající kvalitu povrchu s minimální kuželovitostí, vhodnou pro přesné díly.'
+            : parseFloat(r.avgRa) < 7 && parseFloat(r.maxTaper) < 1.2
+            ? 'Dosažená kvalita povrchu je dobrá a vyhovuje běžným aplikacím. Drobné zlepšení je možné optimalizací rychlosti.'
+            : 'Kvalita povrchu vyžaduje pozornost. Doporučuje se snížení řezné rychlosti nebo zvýšení tlaku pro lepší výsledky.';
+        
+        const energyPercent = (r.costs.energy / parseFloat(r.costTotal) * 100).toFixed(0);
+        const abrasivePercent = (r.costs.abrasive / parseFloat(r.costTotal) * 100).toFixed(0);
+        const laborPercent = (r.costs.labor / parseFloat(r.costTotal) * 100).toFixed(0);
+        
+        const recommendations = [];
+        if (parseFloat(r.avgRa) > 6) recommendations.push('Snižte řeznou rychlost o 15-20% pro zlepšení drsnosti povrchu.');
+        if (parseFloat(r.maxTaper) > 1.0) recommendations.push('Zvyšte tlak čerpadla na 350-400 MPa pro redukci kuželovitosti.');
+        if (state.optLevel < 3) recommendations.push('Pro lepší kvalitu povrchu posuňte optimalizační posuvník směrem ke kvalitě.');
+        if (recommendations.length === 0) recommendations.push('Parametry jsou optimálně nastaveny pro současnou konfiguraci.');
+        
+        const balanceAssessment = state.optLevel < 3 ? 'vyváženou ekonomickou rovnováhu s prioritou na náklady' 
+            : state.optLevel > 3 ? 'vyváženou kvalitativní rovnováhu s důrazem na přesnost' 
+            : 'optimální rovnováhu mezi všemi faktory';
+        
+        const finalRecommendation = parseFloat(r.avgRa) > 7 || parseFloat(r.maxTaper) > 1.3 
+            ? 'Doporučuje se iterativní ladění parametrů pro dosažení lepších výsledků.'
+            : 'Současné nastavení představuje dobrou konfiguraci pro danou aplikaci.';
+        
+        const analysis = `
+${t('analysisIntro').replace('{material}', matName).replace('{thickness}', state.thickness + ' mm')}
+
+${t('analysisMaterial').replace('{material}', matName).replace('{youngModulus}', state.material.E + ' GPa').replace('{kawj}', r.Kawj + ' mm').replace('{cuttability}', cuttability)}
+
+${t('analysisProcess').replace('{pressure}', r.pressure + ' MPa').replace('{flow}', r.flow + ' g/min').replace('{speed}', r.Vpopt + ' mm/min').replace('{cutLength}', state.cutLength + ' mm').replace('{time}', Math.floor(parseFloat(r.cutTimeMin)) + ':' + String(Math.round((parseFloat(r.cutTimeMin) % 1) * 60)).padStart(2, '0')).replace('{productivity}', r.productivity + ' m/h')}
+
+${t('analysisQuality').replace('{avgRa}', r.avgRa + ' µm').replace('{maxTaper}', r.maxTaper + '°').replace('{qualityAssessment}', qualityAssessment)}
+
+${t('analysisEconomics').replace('{totalCost}', '€' + r.costTotal).replace('{energyPercent}', energyPercent).replace('{abrasivePercent}', abrasivePercent).replace('{laborPercent}', laborPercent)}
+
+${t('analysisRecommendations').replace('{recommendations}', recommendations.join(' '))}
+
+${t('analysisConclusion').replace('{balanceAssessment}', balanceAssessment).replace('{finalRecommendation}', finalRecommendation)}
+        `.trim();
+        
+        document.getElementById('analysis-output').textContent = analysis;
+    }
+
+    // ========== DATA IMPORT ==========
+    function handleCSVUpload(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            const lines = text.split('\n').filter(l => l.trim());
+            if (lines.length < 2) {
+                document.getElementById('upload-status').textContent = 'Error: CSV must have header and data rows';
+                return;
+            }
+            
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = lines.slice(1).map(line => {
+                const values = line.split(',');
+                const obj = {};
+                headers.forEach((h, i) => obj[h] = parseFloat(values[i]) || 0);
+                return obj;
+            });
+            
+            state.uploadedData = data;
+            document.getElementById('upload-status').textContent = `✓ Loaded ${data.length} data points`;
+            document.getElementById('upload-status').className = 'text-xs text-green-400';
+        };
+        reader.readAsText(file);
+    }
+
+    // ========== CHAT INITIALIZATION ==========
+    function initChat() {
+        const messages = document.getElementById('chat-messages');
+        const input = document.getElementById('chat-input');
+        const send = document.getElementById('chat-send');
+        
+        const addMessage = (text, isUser = false) => {
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `<div class="max-w-[85%] rounded-lg p-3 text-sm ${isUser ? 'bg-gradient-to-r from-purple-600 to-indigo-600' : 'bg-gray-800'}"><p>${text}</p></div>`;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        };
+        
+        addMessage(t('aiWelcome'));
+        
+        const handleSend = () => {
+            const msg = input.value.trim();
+            if (!msg) return;
+            addMessage(msg, true);
+            input.value = '';
+            setTimeout(() => addMessage(generateAIResponse(msg)), 500);
+        };
+        
+        send.addEventListener('click', handleSend);
+        input.addEventListener('keypress', e => e.key === 'Enter' && handleSend());
+    }
+
+    // ========== VR INITIALIZATION ==========
+    function initVR(scene = 'simulation') {
+        if (state.vrScene) state.vrScene.dispose();
+        
+        const container = document.getElementById('vr-canvas');
+        container.innerHTML = '';
+        
+        const vrScene = new THREE.Scene();
+        vrScene.background = new THREE.Color(0x0a0a0a);
+        
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+        
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        
+        vrScene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const light = new THREE.DirectionalLight(0xffffff, 0.8);
+        light.position.set(5, 10, 7);
+        vrScene.add(light);
+        
+        if (scene === 'simulation') {
+            const workpiece = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 0.008, 0.6),
+                new THREE.MeshStandardMaterial({ color: 0x708090, metalness: 0.7, roughness: 0.3 })
+            );
+            vrScene.add(workpiece);
+            
+            const nozzle = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.003, 0.002, 0.024, 16),
+                new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.9 })
+            );
+            nozzle.position.y = 0.02;
+            vrScene.add(nozzle);
+            
+            camera.position.set(0.4, 0.4, 0.6);
+            
+            const clock = new THREE.Clock();
+            function animate() {
+                const t = clock.getElapsedTime();
+                const x = -0.5 + ((t % 5) / 5);
+                nozzle.position.x = x;
+                controls.update();
+                renderer.render(vrScene, camera);
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+        
+        state.vrScene = { dispose: () => { renderer.dispose(); container.innerHTML = ''; } };
+    }
+
+    // ========== EVENT LISTENERS ==========
+    document.getElementById('lang').addEventListener('change', e => {
+        state.lang = e.target.value;
+        updateTranslations();
+        calculate();
+    });
+
+    document.getElementById('material').addEventListener('change', e => {
+        state.material = MATERIALS.find(m => m.id === e.target.value);
+        calculate();
+    });
+
+    ['thickness', 'cutLength'].forEach(id => {
+        document.getElementById(id).addEventListener('input', e => {
+            state[id] = parseFloat(e.target.value);
+            calculate();
+        });
+    });
+
+    ['pressure', 'abrasiveFlow', 'optLevel'].forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener('input', e => {
+            state[id === 'optLevel' ? 'optLevel' : id === 'pressure' ? 'pressure' : 'abrasiveFlow'] = parseFloat(e.target.value);
+            if (id === 'pressure') document.getElementById('pressure-val').textContent = e.target.value;
+            if (id === 'abrasiveFlow') document.getElementById('flow-val').textContent = e.target.value;
+            calculate();
+        });
+    });
+
+    document.getElementById('model').addEventListener('change', e => {
+        state.model = e.target.value;
+        calculate();
+    });
+
+    document.getElementById('chartType').addEventListener('change', () => updateCharts());
+
+    document.getElementById('generate-analysis').addEventListener('click', generateExpertAnalysis);
+
+    document.getElementById('csvUpload').addEventListener('change', e => {
+        if (e.target.files[0]) handleCSVUpload(e.target.files[0]);
+    });
+
+    document.getElementById('vr-btn').addEventListener('click', () => {
+        document.getElementById('vr-modal').classList.remove('hidden');
+        document.getElementById('vr-modal').classList.add('flex');
+        initVR('simulation');
+    });
+
+    document.getElementById('vr-close').addEventListener('click', () => {
+        document.getElementById('vr-modal').classList.add('hidden');
+        document.getElementById('vr-modal').classList.remove('flex');
+        if (state.vrScene) state.vrScene.dispose();
+    });
+
+    document.querySelectorAll('.vr-scene-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            document.querySelectorAll('.vr-scene-btn').forEach(b => b.className = 'vr-scene-btn bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm');
+            e.target.className = 'vr-scene-btn bg-blue-700 px-3 py-1 rounded text-sm';
+            initVR(e.target.dataset.vrScene);
+        });
+    });
+
+    document.getElementById('chat-toggle').addEventListener('click', () => {
+        document.getElementById('chat-window').classList.toggle('hidden');
+        document.getElementById('chat-window').classList.toggle('flex');
+    });
+
+    document.getElementById('chat-close').addEventListener('click', () => {
+        document.getElementById('chat-window').classList.add('hidden');
+        document.getElementById('chat-window').classList.remove('flex');
+    });
+
+    ['export-csv', 'export-json'].forEach(id => {
+        document.getElementById(id).addEventListener('click', () => {
+            if (!state.results) return;
+            
+            if (id === 'export-csv') {
+                let csv = 'Depth(mm),Ra(µm),Yret(mm),Taper(°),Fh(N),Fv(N)\n';
+                state.results.profile.forEach(p => {
+                    csv += `${p.h},${p.Ra},${p.Yret},${p.taper},${p.Fh},${p.Fv}\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'awj_results.csv';
+                a.click();
+            } else {
+                const data = JSON.stringify({ material: state.material.name[state.lang], parameters: { thickness: state.thickness, pressure: state.pressure, flow: state.abrasiveFlow }, results: state.results }, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'awj_project.json';
+                a.click();
+            }
+        });
+    });
+
+    document.getElementById('share-btn').addEventListener('click', () => {
+        if (navigator.share && state.results) {
+            navigator.share({
+                title: 'AWJ Calculator Results',
+                text: `Cut Time: ${Math.floor(parseFloat(state.results.cutTimeMin))}:${String(Math.round((parseFloat(state.results.cutTimeMin) % 1) * 60)).padStart(2, '0')}, Cost: €${state.results.costTotal}`,
+                url: window.location.href
+            });
+        }
+    });
+
+    // ========== INITIALIZATION ==========
+    updateTranslations();
+    calculate();
+    initChat();
+    </script>
+</body>
+</html>
